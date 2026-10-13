@@ -1,0 +1,86 @@
+prato-conectado/
+│
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   │
+│   │   ├── api/
+│   │   │   ├── routes/
+│   │   │   │   ├── auth.py
+│   │   │   │   ├── usuarios.py
+│   │   │   │   ├── organizacoes.py
+│   │   │   │   ├── doacoes.py
+│   │   │   │   ├── alimentos.py
+│   │   │   │   └── solicitacoes.py
+│   │   │   └── dependencies.py
+│   │   │
+│   │   ├── models/
+│   │   │   ├── usuario.py
+│   │   │   ├── organizacao.py
+│   │   │   ├── doacao.py
+│   │   │   └── alimento.py
+│   │   │
+│   │   ├── schemas/
+│   │   │   ├── usuario.py
+│   │   │   ├── organizacao.py
+│   │   │   └── doacao.py
+│   │   │
+│   │   ├── services/
+│   │   │   ├── auth_service.py
+│   │   │   └── doacao_service.py
+│   │   │
+│   │   ├── core/
+│   │   │   ├── config.py
+│   │   │   └── security.py
+│   │   │
+│   │   └── db/
+│   │       ├── base.py
+│   │       └── session.py
+│   │
+│   ├── alembic/
+│   │   └── versions/
+│   ├── tests/
+│   ├── alembic.ini
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── .dockerignore
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── hooks/
+│   │   ├── contexts/
+│   │   ├── routes/
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   │
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── Dockerfile
+│   └── .dockerignore
+│
+├── database/
+│   └── schema_postgresql.sql
+│
+├── docs/
+│   ├── diagramas/
+│   │   ├── diagrama_classes.md
+│   │   └── diagrama_banco.md
+│   │
+│   ├── banco/
+│   │   ├── modelo_banco.dbml
+│   │   └── dicionario_dados.md
+│   │
+│   ├── requisitos_e_rastreabilidade.md
+│   ├── regras_de_negocio.md
+│   └── README.md
+│
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+└── README.md
