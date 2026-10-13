@@ -1,0 +1,138 @@
+# Diagrama de classes (UML) — Prato Conectado
+
+Use **Ctrl+Shift+V** no VS Code. Este é um modelo **conceitual do domínio Python**, e não um dump automático de classes SQLAlchemy. Operações apresentadas são propostas para a futura camada de serviços. Uma oferta publicada deve ter pelo menos um item; em rascunho pode ter zero. O voluntário pertence à ONG, mas ainda não existe entidade de corrida/transporte no backlog.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class Usuario {
+      +UUID id
+      +string googleSub
+      +string nome
+      +string email
+      +PapelSistema papelSistema
+      +boolean ativo
+      +ehAdministrador() bool
+    }
+    class Organizacao {
+      +UUID id
+      +TipoOrganizacao tipo
+      +string nome
+      +string cnpj
+      +StatusVerificacao statusVerificacao
+      +int capacidadeAtendimento
+      +aprovar(administrador)
+      +reprovar(administrador, justificativa)
+      +podeParticipar() bool
+    }
+    class DocumentoOrganizacao {
+      +UUID id
+      +TipoDocumento tipo
+      +string chaveArquivo
+      +datetime enviadoEm
+    }
+    class AnaliseCadastro {
+      +UUID id
+      +Decisao decisao
+      +string justificativa
+      +datetime analisadoEm
+    }
+    class Voluntario {
+      +UUID id
+      +string nome
+      +string telefone
+      +string endereco
+      +boolean ativo
+    }
+    class CategoriaAlimento {
+      +UUID id
+      +string nome
+    }
+    class NecessidadeONG {
+      +UUID id
+      +decimal quantidadeDesejada
+      +string unidade
+      +boolean ativa
+    }
+    class TermoResponsabilidade {
+      +UUID id
+      +string versao
+      +string conteudo
+      +boolean ativo
+    }
+    class AceiteTermo {
+      +UUID id
+      +datetime aceitoEm
+    }
+    class Doacao {
+      +UUID id
+      +string titulo
+      +Periodo periodo
+      +datetime inicioRetirada
+      +datetime fimRetirada
+      +StatusDoacao status
+      +publicar()
+      +reservar(solicitacao)
+      +registrarRetirada()
+      +confirmarEntrega()
+      +encerrarPorPrazo()
+    }
+    class ItemDoacao {
+      +UUID id
+      +string descricao
+      +decimal quantidade
+      +string unidade
+      +datetime validadeEm
+      +estaValido(agora) bool
+    }
+    class TriagemDoacao {
+      +UUID id
+      +EtapaTriagem etapa
+      +ResultadoTriagem resultado
+      +dict respostas
+      +datetime preenchidoEm
+    }
+    class SolicitacaoDoacao {
+      +UUID id
+      +StatusSolicitacao status
+      +datetime solicitadoEm
+      +aceitar()
+      +recusar()
+      +cancelar()
+    }
+    class HistoricoDoacao {
+      +UUID id
+      +string statusAnterior
+      +string statusNovo
+      +datetime criadoEm
+    }
+    class Notificacao {
+      +UUID id
+      +string tipo
+      +string titulo
+      +datetime lidaEm
+      +marcarComoLida()
+    }
+
+    Usuario "1" --> "0..*" Organizacao : responsavel
+    Usuario "1" --> "0..*" AceiteTermo : realiza
+    Usuario "1" --> "0..*" AnaliseCadastro : analisa
+    Usuario "1" --> "0..*" Notificacao : recebe
+    Organizacao "1" *-- "0..*" DocumentoOrganizacao : documentos
+    Organizacao "1" *-- "0..*" AnaliseCadastro : analises
+    Organizacao "1" *-- "0..*" Voluntario : voluntarios_ONG
+    Organizacao "1" *-- "0..*" NecessidadeONG : necessidades
+    NecessidadeONG "0..*" --> "1" CategoriaAlimento : categoria
+    Organizacao "1" --> "0..*" AceiteTermo : aceita_por
+    TermoResponsabilidade "1" --> "0..*" AceiteTermo : versao
+    Organizacao "1" --> "0..*" Doacao : doador
+    Usuario "1" --> "0..*" Doacao : cadastra
+    Doacao "0..*" --> "0..1" AceiteTermo : autoriza_publicacao
+    Doacao "1" *-- "1..*" ItemDoacao : contem_ao_publicar
+    ItemDoacao "0..*" --> "1" CategoriaAlimento : categoria
+    Doacao "1" *-- "0..2" TriagemDoacao : triagens
+    Doacao "1" *-- "0..*" SolicitacaoDoacao : solicitacoes
+    SolicitacaoDoacao "0..*" --> "1" Organizacao : ong_solicitante
+    Doacao "1" *-- "0..*" HistoricoDoacao : historico
+```

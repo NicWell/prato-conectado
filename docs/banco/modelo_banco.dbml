@@ -1,0 +1,170 @@
+Project PratoConectado {
+  database_type: 'PostgreSQL'
+  Note: 'Modelo inicial alinhado as HU01-HU09; verificacoes entre tabelas ficam no backend Python.'
+}
+
+Table usuarios {
+  id uuid [pk, default: `gen_random_uuid()`]
+  google_sub varchar(255) [not null, unique]
+  nome varchar(160) [not null]
+  email varchar(255) [not null]
+  papel_sistema varchar(20) [not null, default: 'USUARIO']
+  ativo boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table organizacoes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  usuario_responsavel_id uuid [not null, ref: > usuarios.id]
+  tipo varchar(12) [not null]
+  nome varchar(180) [not null]
+  cnpj char(14) [not null, unique]
+  email_contato varchar(255) [not null]
+  telefone varchar(25) [not null]
+  logradouro varchar(180) [not null]
+  numero varchar(15) [not null]
+  complemento varchar(120)
+  bairro varchar(100) [not null]
+  cidade varchar(120) [not null]
+  uf char(2) [not null]
+  cep char(8) [not null]
+  capacidade_atendimento integer
+  status_verificacao varchar(12) [not null, default: 'PENDENTE']
+  criado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table documentos_organizacao {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  enviado_por_id uuid [not null, ref: > usuarios.id]
+  tipo varchar(12) [not null]
+  chave_arquivo varchar(500) [not null]
+  nome_arquivo varchar(255) [not null]
+  enviado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table analises_cadastro {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  administrador_id uuid [not null, ref: > usuarios.id]
+  decisao varchar(10) [not null]
+  justificativa text
+  analisado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table voluntarios {
+  id uuid [pk, default: `gen_random_uuid()`]
+  ong_id uuid [not null, ref: > organizacoes.id]
+  nome varchar(160) [not null]
+  email varchar(255)
+  telefone varchar(25) [not null]
+  logradouro varchar(180) [not null]
+  numero varchar(15) [not null]
+  bairro varchar(100) [not null]
+  cidade varchar(120) [not null]
+  uf char(2) [not null]
+  cep char(8) [not null]
+  ativo boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table categorias_alimento {
+  id uuid [pk, default: `gen_random_uuid()`]
+  nome varchar(100) [not null, unique]
+  ativa boolean [not null, default: true]
+}
+
+Table necessidades_ong {
+  id uuid [pk, default: `gen_random_uuid()`]
+  ong_id uuid [not null, ref: > organizacoes.id]
+  categoria_id uuid [not null, ref: > categorias_alimento.id]
+  quantidade_desejada numeric(12,3) [not null]
+  unidade varchar(20) [not null]
+  observacao text
+  ativa boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table termos_responsabilidade {
+  id uuid [pk, default: `gen_random_uuid()`]
+  versao varchar(30) [not null, unique]
+  titulo varchar(160) [not null]
+  conteudo text [not null]
+  ativo boolean [not null, default: false]
+  criado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table aceites_termo {
+  id uuid [pk, default: `gen_random_uuid()`]
+  termo_id uuid [not null, ref: > termos_responsabilidade.id]
+  usuario_id uuid [not null, ref: > usuarios.id]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  aceito_em timestamptz [not null, default: `NOW()`]
+}
+
+Table doacoes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  doador_id uuid [not null, ref: > organizacoes.id]
+  criado_por_id uuid [not null, ref: > usuarios.id]
+  aceite_termo_id uuid [ref: > aceites_termo.id]
+  titulo varchar(180) [not null]
+  descricao text
+  periodo varchar(10) [not null, default: 'OUTRO']
+  inicio_retirada timestamptz [not null]
+  fim_retirada timestamptz [not null]
+  status varchar(20) [not null, default: 'RASCUNHO']
+  criado_em timestamptz [not null, default: `NOW()`]
+  atualizado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table itens_doacao {
+  id uuid [pk, default: `gen_random_uuid()`]
+  doacao_id uuid [not null, ref: > doacoes.id]
+  categoria_id uuid [not null, ref: > categorias_alimento.id]
+  descricao varchar(200) [not null]
+  quantidade numeric(12,3) [not null]
+  unidade varchar(20) [not null]
+  validade_em timestamptz [not null]
+}
+
+Table triagens_doacao {
+  id uuid [pk, default: `gen_random_uuid()`]
+  doacao_id uuid [not null, ref: > doacoes.id]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  preenchido_por_id uuid [not null, ref: > usuarios.id]
+  etapa varchar(20) [not null]
+  resultado varchar(10) [not null]
+  respostas jsonb [not null]
+  preenchido_em timestamptz [not null, default: `NOW()`]
+}
+
+Table solicitacoes_doacao {
+  id uuid [pk, default: `gen_random_uuid()`]
+  doacao_id uuid [not null, ref: > doacoes.id]
+  ong_id uuid [not null, ref: > organizacoes.id]
+  solicitado_por_id uuid [not null, ref: > usuarios.id]
+  status varchar(12) [not null, default: 'PENDENTE']
+  observacao text
+  solicitado_em timestamptz [not null, default: `NOW()`]
+  respondido_em timestamptz
+}
+
+Table historico_doacao {
+  id uuid [pk, default: `gen_random_uuid()`]
+  doacao_id uuid [not null, ref: > doacoes.id]
+  alterado_por_id uuid [ref: > usuarios.id]
+  status_anterior varchar(20)
+  status_novo varchar(20) [not null]
+  observacao text
+  criado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table notificacoes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  usuario_id uuid [not null, ref: > usuarios.id]
+  tipo varchar(35) [not null]
+  titulo varchar(160) [not null]
+  mensagem text [not null]
+  lida_em timestamptz
+  criado_em timestamptz [not null, default: `NOW()`]
+}

@@ -1,0 +1,178 @@
+erDiagram
+    USUARIOS ||--o{ ORGANIZACOES : "usuario_responsavel_id"
+    ORGANIZACOES ||--o{ DOCUMENTOS_ORGANIZACAO : "organizacao_id"
+    USUARIOS ||--o{ DOCUMENTOS_ORGANIZACAO : "enviado_por_id"
+    ORGANIZACOES ||--o{ ANALISES_CADASTRO : "organizacao_id"
+    USUARIOS ||--o{ ANALISES_CADASTRO : "administrador_id"
+    ORGANIZACOES ||--o{ VOLUNTARIOS : "ong_id"
+    ORGANIZACOES ||--o{ NECESSIDADES_ONG : "ong_id"
+    CATEGORIAS_ALIMENTO ||--o{ NECESSIDADES_ONG : "categoria_id"
+    TERMOS_RESPONSABILIDADE ||--o{ ACEITES_TERMO : "termo_id"
+    USUARIOS ||--o{ ACEITES_TERMO : "usuario_id"
+    ORGANIZACOES ||--o{ ACEITES_TERMO : "organizacao_id"
+    ORGANIZACOES ||--o{ DOACOES : "doador_id"
+    USUARIOS ||--o{ DOACOES : "criado_por_id"
+    ACEITES_TERMO o|--o{ DOACOES : "aceite_termo_id"
+    DOACOES ||--o{ ITENS_DOACAO : "doacao_id"
+    CATEGORIAS_ALIMENTO ||--o{ ITENS_DOACAO : "categoria_id"
+    DOACOES ||--o{ TRIAGENS_DOACAO : "doacao_id"
+    ORGANIZACOES ||--o{ TRIAGENS_DOACAO : "organizacao_id"
+    USUARIOS ||--o{ TRIAGENS_DOACAO : "preenchido_por_id"
+    DOACOES ||--o{ SOLICITACOES_DOACAO : "doacao_id"
+    ORGANIZACOES ||--o{ SOLICITACOES_DOACAO : "ong_id"
+    USUARIOS ||--o{ SOLICITACOES_DOACAO : "solicitado_por_id"
+    DOACOES ||--o{ HISTORICO_DOACAO : "doacao_id"
+    USUARIOS o|--o{ HISTORICO_DOACAO : "alterado_por_id"
+    USUARIOS ||--o{ NOTIFICACOES : "usuario_id"
+
+    USUARIOS {
+        uuid id PK
+        varchar google_sub UK
+        varchar nome
+        varchar email
+        varchar papel_sistema
+        boolean ativo
+        timestamp criado_em
+    }
+    ORGANIZACOES {
+        uuid id PK
+        uuid usuario_responsavel_id FK
+        varchar tipo
+        varchar nome
+        char cnpj UK
+        varchar email_contato
+        varchar telefone
+        varchar logradouro
+        varchar numero
+        varchar complemento
+        varchar bairro
+        varchar cidade
+        char uf
+        char cep
+        integer capacidade_atendimento
+        varchar status_verificacao
+        timestamp criado_em
+    }
+    DOCUMENTOS_ORGANIZACAO {
+        uuid id PK
+        uuid organizacao_id FK
+        uuid enviado_por_id FK
+        varchar tipo
+        varchar chave_arquivo
+        varchar nome_arquivo
+        timestamp enviado_em
+    }
+    ANALISES_CADASTRO {
+        uuid id PK
+        uuid organizacao_id FK
+        uuid administrador_id FK
+        varchar decisao
+        text justificativa
+        timestamp analisado_em
+    }
+    VOLUNTARIOS {
+        uuid id PK
+        uuid ong_id FK
+        varchar nome
+        varchar email
+        varchar telefone
+        varchar logradouro
+        varchar numero
+        varchar bairro
+        varchar cidade
+        char uf
+        char cep
+        boolean ativo
+        timestamp criado_em
+    }
+    CATEGORIAS_ALIMENTO {
+        uuid id PK
+        varchar nome UK
+        boolean ativa
+    }
+    NECESSIDADES_ONG {
+        uuid id PK
+        uuid ong_id FK
+        uuid categoria_id FK
+        decimal quantidade_desejada
+        varchar unidade
+        text observacao
+        boolean ativa
+        timestamp criado_em
+    }
+    TERMOS_RESPONSABILIDADE {
+        uuid id PK
+        varchar versao UK
+        varchar titulo
+        text conteudo
+        boolean ativo
+        timestamp criado_em
+    }
+    ACEITES_TERMO {
+        uuid id PK
+        uuid termo_id FK
+        uuid usuario_id FK
+        uuid organizacao_id FK
+        timestamp aceito_em
+    }
+    DOACOES {
+        uuid id PK
+        uuid doador_id FK
+        uuid criado_por_id FK
+        uuid aceite_termo_id FK
+        varchar titulo
+        text descricao
+        varchar periodo
+        timestamp inicio_retirada
+        timestamp fim_retirada
+        varchar status
+        timestamp criado_em
+        timestamp atualizado_em
+    }
+    ITENS_DOACAO {
+        uuid id PK
+        uuid doacao_id FK
+        uuid categoria_id FK
+        varchar descricao
+        decimal quantidade
+        varchar unidade
+        timestamp validade_em
+    }
+    TRIAGENS_DOACAO {
+        uuid id PK
+        uuid doacao_id FK
+        uuid organizacao_id FK
+        uuid preenchido_por_id FK
+        varchar etapa
+        varchar resultado
+        jsonb respostas
+        timestamp preenchido_em
+    }
+    SOLICITACOES_DOACAO {
+        uuid id PK
+        uuid doacao_id FK
+        uuid ong_id FK
+        uuid solicitado_por_id FK
+        varchar status
+        text observacao
+        timestamp solicitado_em
+        timestamp respondido_em
+    }
+    HISTORICO_DOACAO {
+        uuid id PK
+        uuid doacao_id FK
+        uuid alterado_por_id FK
+        varchar status_anterior
+        varchar status_novo
+        text observacao
+        timestamp criado_em
+    }
+    NOTIFICACOES {
+        uuid id PK
+        uuid usuario_id FK
+        varchar tipo
+        varchar titulo
+        text mensagem
+        timestamp lida_em
+        timestamp criado_em
+    }
