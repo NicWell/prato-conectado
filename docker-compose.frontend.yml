@@ -1,0 +1,12 @@
+# Executar na raiz do repositório: docker compose -f docker-compose.frontend.yml up --build -d
+# Arquivo separado para não sobrescrever docker-compose.yml do backend.
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_MOCK_MODE: "true"
+    ports:
+      - "5173:80"
+    restart: unless-stopped
