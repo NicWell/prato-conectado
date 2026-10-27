@@ -6,7 +6,11 @@ RUN npm ci
 COPY . .
 # Mock é a única integração nesta sprint. Para integrar API, ajustar antes do build.
 ARG VITE_MOCK_MODE=true
+ARG VITE_AUTH_MODE=mock
+ARG VITE_API_URL=http://localhost:8000
 ENV VITE_MOCK_MODE=$VITE_MOCK_MODE
+ENV VITE_AUTH_MODE=$VITE_AUTH_MODE
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine AS production

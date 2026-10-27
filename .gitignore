@@ -1,3 +1,12 @@
 .env
-.node_modules
-__pycache__/
+.env.*
+!.env.example
+**/.env.local
+**/.env.*.local
+node_modules/
+**/node_modules/
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+*.pyc
+.vscode/

@@ -47,7 +47,7 @@ function Field({ id, label, error, hint, ...props }) {
   </div>;
 }
 
-export function LoginScreen({ theme, toggleTheme, onLogin, onDemo, navigate, onReset }) {
+export function LoginScreen({ apiAtiva = false, theme, toggleTheme, onLogin, onDemo, navigate, onReset }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -76,9 +76,9 @@ export function LoginScreen({ theme, toggleTheme, onLogin, onDemo, navigate, onR
     </form>
     <div className="divider-label"><span>ou</span></div>
     <button className="btn btn--outline btn--wide" onClick={() => loginDemo('DOADOR')} disabled={enviando}>
-      <span className="google-g" aria-hidden="true">G</span> Entrar com Google <span className="subtle-mini">(mock)</span>
+      <span className="google-g" aria-hidden="true">G</span> {apiAtiva ? 'Entrar como doador de teste' : <>Entrar com Google <span className="subtle-mini">(mock)</span></>}
     </button>
-    <p className="helper-center">Este botão simula uma conta Google. OAuth real será integrado pelo backend.</p>
+    <p className="helper-center">{apiAtiva ? 'Login de teste validado pela API. Google OAuth ainda não foi implementado.' : 'Este botão simula uma conta Google. OAuth real será integrado pelo backend.'}</p>
     <div className="auth-bottom"><p>Ainda não tem acesso?</p>
       <button className="btn btn--yellow btn--wide" onClick={() => navigate('/cadastro')}>Criar usuário</button>
       <button className="underlined" onClick={() => navigate('/demonstracao')}>Contas de demonstração e restauração</button>
@@ -182,7 +182,7 @@ export function ResetScreen({ theme, toggleTheme, onReset, navigate }) {
   </AuthShell>;
 }
 
-export function DemoScreen({ theme, toggleTheme, onDemo, onRestore, navigate }) {
+export function DemoScreen({ apiAtiva = false, theme, toggleTheme, onDemo, onRestore, navigate }) {
   const [msg, setMsg] = useState('');
   async function restaurar() {
     if (!window.confirm('Restaurar os dados locais? Isso apagará os cadastros e doações feitos neste navegador.')) return;
@@ -190,7 +190,7 @@ export function DemoScreen({ theme, toggleTheme, onDemo, onRestore, navigate }) 
   }
   return <AuthShell theme={theme} toggleTheme={toggleTheme} tipo="LOGIN">
     <p className="eyebrow">AMBIENTE DE TESTES</p><h2 className="auth-title">Contas de demonstração</h2>
-    <p className="auth-subtitle">Estas contas estão pré-aprovadas para testar os dois perfis. Nenhum dado é enviado a um servidor.</p>
+    <p className="auth-subtitle">Estas contas estão pré-aprovadas para testar os dois perfis. {apiAtiva ? 'No modo conectado, o login é validado pelo servidor; as demais operações continuam locais.' : 'Nenhum dado é enviado a um servidor.'}</p>
     <div className="demo-account"><strong>Doador</strong><code>{dadosDemo.doador}</code><button className="btn btn--red" onClick={() => onDemo('DOADOR')}>Entrar como doador</button></div>
     <div className="demo-account"><strong>ONG</strong><code>{dadosDemo.ong}</code><button className="btn btn--red" onClick={() => onDemo('ONG')}>Entrar como ONG</button></div>
     <p className="field-hint">Senha inicial das duas contas: <strong>{dadosDemo.senha}</strong></p>

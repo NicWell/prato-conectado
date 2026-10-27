@@ -1,0 +1,1 @@
+"""Prato Conectado API."""
