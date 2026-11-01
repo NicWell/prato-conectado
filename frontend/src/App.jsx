@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { acessarDemo, autenticar, encerrarSessao, iniciarMock, listarDoacoes, mudarStatusDoacao, novaDoacao, redefinirSenha, registrar, restaurarMock, usuarioAtual } from './mock/store.js';
 import { DemoScreen, LoginScreen, PendingScreen, RegisterScreen, ResetScreen } from './components/AuthScreens.jsx';
 import Workspace from './components/Workspace.jsx';
+import { USAR_API_AUTH, loginApi, logoutApi, usuarioSessaoApi, validarSessaoApi } from './services/auth.js';
 
 function lerRota() { return window.location.hash.slice(1) || '/entrar'; }
 export default function App() {
@@ -18,27 +19,33 @@ export default function App() {
     else window.location.hash = caminho;
   }, []);
   const atualizarDados = useCallback(() => {
-    setUsuario(usuarioAtual()); setDoacoes(listarDoacoes());
+    setUsuario(USAR_API_AUTH ? usuarioSessaoApi() : usuarioAtual()); setDoacoes(listarDoacoes());
   }, []);
   useEffect(() => {
     const onHash = () => { setRota(lerRota()); window.scrollTo(0, 0); };
     window.addEventListener('hashchange', onHash);
-    iniciarMock().then(() => { atualizarDados(); setPronto(true); }).catch(e => { setFatal(e.message); setPronto(true); });
+    iniciarMock().then(async () => { if (USAR_API_AUTH) await validarSessaoApi(); atualizarDados(); setPronto(true); }).catch(e => { setFatal(e.message); setPronto(true); });
     return () => window.removeEventListener('hashchange', onHash);
   }, [atualizarDados]);
   useEffect(() => { localStorage.setItem('prato_tema', tema); }, [tema]);
   const alternarTema = () => setTema(t => t === 'dark' ? 'light' : 'dark');
   const avisar = (msg) => { setAviso(msg); };
   const entrar = async (email, senha) => {
-    const u = await autenticar(email, senha); atualizarDados();
+    const u = USAR_API_AUTH ? await loginApi(email, senha) : await autenticar(email, senha); atualizarDados();
     navegar(u.status === 'PENDENTE' ? '/pendente' : '/app/inicio');
   };
   const entrarDemo = async (tipo) => {
-    await acessarDemo(tipo); atualizarDados(); navegar('/app/inicio');
-    avisar('Acesso de demonstração: autenticação local, sem servidor.');
+    if (USAR_API_AUTH) {
+      await loginApi(tipo === 'ONG' ? 'ong@demo.com' : 'doador@demo.com', 'Teste@123');
+      avisar('Login validado na API. As doações e demais operações ainda são simuladas.');
+    } else {
+      await acessarDemo(tipo);
+      avisar('Acesso de demonstração: autenticação local, sem servidor.');
+    }
+    atualizarDados(); navegar('/app/inicio');
   };
-  const cadastrar = async (dados) => { await registrar(dados); atualizarDados(); navegar('/pendente'); };
-  const sair = () => { encerrarSessao(); atualizarDados(); navegar('/entrar'); };
+  const cadastrar = async (dados) => { if (USAR_API_AUTH) throw new Error('Cadastro via API será implementado na próxima etapa.'); await registrar(dados); atualizarDados(); navegar('/pendente'); };
+  const sair = () => { if (USAR_API_AUTH) logoutApi(); else encerrarSessao(); atualizarDados(); navegar('/entrar'); };
   const publicar = (dados) => {
     novaDoacao(usuario, dados); atualizarDados(); avisar('Doação publicada na simulação!');
   };
@@ -64,9 +71,9 @@ export default function App() {
   } else if (rota === '/recuperar-senha') {
     tela = <ResetScreen theme={tema} toggleTheme={alternarTema} onReset={redefinirSenha} navigate={navegar} />;
   } else if (rota === '/demonstracao') {
-    tela = <DemoScreen theme={tema} toggleTheme={alternarTema} onDemo={entrarDemo} onRestore={restaurar} navigate={navegar} />;
+    tela = <DemoScreen apiAtiva={USAR_API_AUTH} theme={tema} toggleTheme={alternarTema} onDemo={entrarDemo} onRestore={restaurar} navigate={navegar} />;
   } else {
-    tela = <LoginScreen theme={tema} toggleTheme={alternarTema} onLogin={entrar} onDemo={entrarDemo} navigate={navegar} onReset={() => navegar('/recuperar-senha')} />;
+    tela = <LoginScreen apiAtiva={USAR_API_AUTH} theme={tema} toggleTheme={alternarTema} onLogin={entrar} onDemo={entrarDemo} navigate={navegar} onReset={() => navegar('/recuperar-senha')} />;
   }
-  return <>{tela}{aviso && <div className="toast" role="status"><span>{aviso}</span><button type="button" onClick={() => setAviso('')} aria-label="Fechar aviso">×</button></div>}</>;
+  return <>{USAR_API_AUTH && usuario?.status === 'APROVADA' && <div className="api-auth-notice" role="note">Login conectado ao PostgreSQL · Cadastros e doações ainda são simulados neste frontend.</div>}{tela}{aviso && <div className="toast" role="status"><span>{aviso}</span><button type="button" onClick={() => setAviso('')} aria-label="Fechar aviso">×</button></div>}</>;
 }
