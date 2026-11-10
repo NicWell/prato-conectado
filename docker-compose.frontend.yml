@@ -7,6 +7,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_MOCK_MODE: "true"
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-api}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "5173:80"
     restart: unless-stopped

@@ -234,3 +234,15 @@ button:disabled{cursor:not-allowed;opacity:.55}
   .hero-note { padding: 9px; }
   .hero-description { margin-bottom: 12px; }
 }
+
+/* Indica explicitamente que apenas a autenticação utiliza o backend. */
+.api-auth-notice { position: fixed; z-index: 9999; bottom: 0; left: 0; right: 0; padding: 7px 12px; background: #162c3a; color: #fff; font-size: 12px; text-align: center; border-top: 1px solid #8eb8ca; pointer-events: none; }
+/* Integração do cadastro real: endereço detalhado e botão oficial Google */
+.auth-form-row{display:grid;grid-template-columns:1fr 1.5fr;gap:12px}
+.auth-form-row .field{min-width:0}
+.google-auth-control{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;min-height:46px}
+.google-button-container{width:100%;display:flex;justify-content:center;min-height:42px}
+.google-button-container iframe{max-width:100%}
+.pending-page .btn{margin:8px 0}
+.auth-form--register{padding-bottom:14px}
+@media(max-width:460px){.auth-form-row{grid-template-columns:1fr}}
