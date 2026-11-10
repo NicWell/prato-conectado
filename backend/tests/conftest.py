@@ -29,7 +29,7 @@ def db():
         engine = create_engine(test_url, connect_args={"options": f"-csearch_path={schema}"})
         scripts = Path(__file__).resolve().parents[2] / "database"
         with engine.connect() as conn:
-            for script in ("schema_postgresql.sql", "002_credenciais_locais.sql", "003_cadastro_real.sql", "004_google.sql"):
+            for script in ("schema_postgresql.sql", "002_credenciais_locais.sql", "003_cadastro_real.sql", "004_google.sql", "005_painel_administrativo.sql"):
                 conn.connection.driver_connection.execute((scripts / script).read_text(encoding="utf-8"))
                 conn.commit()
     else:

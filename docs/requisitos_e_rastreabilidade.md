@@ -4,7 +4,7 @@
 
 ## Estado técnico atual (sem alterar aceite acadêmico)
 
-Login por e-mail/senha, cadastro, conclusão de perfil e Google estão implementados no backend e integrados ao React. HU01 depende de configuração Client ID, validação real e aceite; consulte [contrato Google](integracao_google.md). HU02/HU04 têm cadastro backend e React, incluindo doador PF como extensão confirmada, mas dependem do fluxo documental e aceite. HU03/HU05 e operações HU06–HU09 ainda não possuem endpoints. O frontend demonstra parte desses fluxos localmente. Consulte [cadastro](cadastro_real.md).
+Login por e-mail/senha, cadastro, conclusão de perfil e Google estão implementados no backend e integrados ao React. HU01 depende de configuração Client ID, validação real e aceite; consulte [contrato Google](integracao_google.md). HU02/HU04 têm cadastro backend e React, incluindo doador PF como extensão confirmada, mas dependem do fluxo documental e aceite. HU05 possui [painel e endpoints administrativos](painel_administrativo.md) para análise de dados, aprovação/reprovação justificada e comunicação interna; envio/revisão de documentos ainda pendente. HU03 e operações HU06–HU09 ainda não possuem endpoints. O frontend demonstra parte desses fluxos localmente. Consulte [cadastro](cadastro_real.md).
 
 A planilha citada não está no repositório; o status de aceite abaixo é registro histórico, não comprovação de aceitação da implementação atual.
 

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Uuid, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -18,7 +18,11 @@ class Usuario(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     credencial: Mapped["CredencialLocal | None"] = relationship(back_populates="usuario", uselist=False)
-    __table_args__ = (Index("uq_usuarios_email_ci", func.lower(email), unique=True),)
+    __table_args__ = (
+        Index("uq_usuarios_email_ci", func.lower(email), unique=True),
+        Index("uq_administrador_unico", papel_sistema, unique=True,
+              postgresql_where=papel_sistema == "ADMINISTRADOR", sqlite_where=papel_sistema == "ADMINISTRADOR"),
+    )
 
 
 class CredencialLocal(Base):
@@ -84,3 +88,30 @@ class DesafioGoogle(Base):
     usuario_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("usuarios.id"))
     expira_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     consumido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AnaliseCadastro(Base):
+    __tablename__ = "analises_cadastro"
+    __table_args__ = (
+        CheckConstraint("(organizacao_id IS NOT NULL AND doador_pf_id IS NULL) OR (organizacao_id IS NULL AND doador_pf_id IS NOT NULL)", name="chk_analise_perfil"),
+        CheckConstraint("decisao IN ('APROVADA', 'REPROVADA')", name="chk_analises_cadastro_decisao_1"),
+        CheckConstraint("decisao <> 'REPROVADA' OR (justificativa IS NOT NULL AND length(trim(justificativa)) > 0)", name="chk_analise_justificativa"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organizacao_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("organizacoes.id"))
+    doador_pf_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("doadores_pessoa_fisica.id"))
+    administrador_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("usuarios.id"), nullable=False)
+    decisao: Mapped[str] = mapped_column(String(10), nullable=False)
+    justificativa: Mapped[str | None] = mapped_column(Text)
+    analisado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Notificacao(Base):
+    __tablename__ = "notificacoes"
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    usuario_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("usuarios.id"), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(35), nullable=False)
+    titulo: Mapped[str] = mapped_column(String(160), nullable=False)
+    mensagem: Mapped[str] = mapped_column(Text, nullable=False)
+    lida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

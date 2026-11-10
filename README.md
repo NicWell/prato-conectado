@@ -9,8 +9,9 @@ Monorepositório: `frontend/` (React/Vite), `backend/` (FastAPI), `database/` (P
 - `docker-compose.yml` inicia **db + backend + frontend**; `docker-compose.frontend.yml` inicia somente o frontend e aceita modo API ou mock.
 - Cadastro real em `POST /api/auth/cadastro`: ONG e empresa com CNPJ numérico/alfanumérico; doador pessoa física com CPF. Conta, credencial e perfil são criados em transação, sempre `PENDENTE`.
 - Login Google, vinculação explícita e conclusão de perfil estão implementados no backend e integrados ao React/GIS. Configure `GOOGLE_CLIENT_ID`, repassado ao build como `VITE_GOOGLE_CLIENT_ID`: [contrato Google](docs/integracao_google.md).
-- **Aprovação, recuperação de senha e doações NÃO estão implementados no backend.** Cadastro React, primeiro acesso Google, conclusão de perfil e vinculação já usam a API. Doações e reservas permanecem demonstrativas/locais.
-- Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 004](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
+- Painel administrativo integrado à API: conta exclusiva da equipe, consulta de ONGs/doadores, aprovação e reprovação justificada, histórico e notificação interna. Veja [configuração e criação da conta](docs/painel_administrativo.md). Revisão documental ainda pendente.
+- Recuperação de senha real e doações ainda não estão implementadas no backend. Doações e reservas permanecem demonstrativas/locais.
+- Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 005](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
 
 ## Iniciar no Windows (PowerShell)
 

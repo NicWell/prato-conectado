@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import issue_access_token, read_access_token, verify_password
 from app.db.session import get_db
-from app.models import CredencialLocal, DoadorPessoaFisica, Organizacao, Usuario
+from app.models import AnaliseCadastro, CredencialLocal, DoadorPessoaFisica, Organizacao, Usuario
 from app.schemas.cadastro import CadastroPayload, PerfilPayload
 from app.services.cadastro import CadastroDuplicado, cadastrar_conta, completar_perfil
 
@@ -32,6 +32,7 @@ class UsuarioPublico(BaseModel):
     papel_sistema: str
     cadastro_completo: bool
     google_vinculado: bool
+    motivo_reprovacao: str | None = None
 
 
 class LoginResponse(BaseModel):
@@ -50,6 +51,11 @@ def get_user_view(db: Session, usuario: Usuario) -> UsuarioPublico:
         DoadorPessoaFisica.usuario_responsavel_id == usuario.id
     ))
     cadastro = org or pessoa
+    motivo = None
+    if cadastro and cadastro.status_verificacao == "REPROVADA":
+        alvo = AnaliseCadastro.organizacao_id if org else AnaliseCadastro.doador_pf_id
+        motivo = db.scalar(select(AnaliseCadastro.justificativa).where(alvo == cadastro.id)
+                           .order_by(AnaliseCadastro.analisado_em.desc(), AnaliseCadastro.id).limit(1))
     tipo = org.tipo if org else "DOADOR" if pessoa else "SEM_ORGANIZACAO"
     if org:
         perfil = "ONG" if org.tipo == "ONG" else "EMPRESA"
@@ -67,6 +73,7 @@ def get_user_view(db: Session, usuario: Usuario) -> UsuarioPublico:
         papel_sistema=usuario.papel_sistema,
         cadastro_completo=cadastro is not None,
         google_vinculado=usuario.google_sub is not None,
+        motivo_reprovacao=motivo,
     )
 
 
@@ -125,6 +132,8 @@ def me(usuario: Usuario = Depends(current_user), db: Session = Depends(get_db)):
 
 @router.post("/perfil", response_model=UsuarioPublico, status_code=status.HTTP_201_CREATED)
 def concluir_cadastro(payload: PerfilPayload, usuario: Usuario = Depends(current_user), db: Session = Depends(get_db)):
+    if usuario.papel_sistema == "ADMINISTRADOR":
+        raise HTTPException(403, "A conta administrativa não possui perfil de participante.")
     try:
         usuario = completar_perfil(db, usuario, payload)
     except CadastroDuplicado as exc:

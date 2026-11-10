@@ -1,0 +1,12 @@
+.admin-panel{padding:32px clamp(16px,4vw,64px)}
+.admin-header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:32px}
+.admin-header h1{margin:0}.admin-header p,.admin-card p{overflow-wrap:anywhere}
+.admin-filters{display:flex;flex-wrap:wrap;gap:16px;align-items:end;margin-bottom:24px}
+.admin-filters label,.admin-reason{display:flex;flex-direction:column;gap:8px}
+.admin-filters input,.admin-filters select,.admin-reason textarea{padding:12px;border-radius:8px;border:1px solid var(--stroke);background:var(--input);color:var(--text)}
+.admin-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px}
+.admin-card,.admin-detail{border:1px solid var(--stroke);border-radius:12px;background:var(--panel);padding:24px;margin-bottom:16px;overflow-wrap:anywhere}
+.admin-card h3{margin-top:0}.admin-detail{align-self:start}.admin-detail dl div{margin-bottom:16px}
+.admin-detail dt{font-weight:700}.admin-detail dd{margin:6px 0;color:var(--sub)}
+.admin-reason textarea{min-height:110px;resize:vertical;margin-bottom:16px}
+@media(max-width:800px){.admin-columns{grid-template-columns:1fr}.admin-header{align-items:start;flex-direction:column}.admin-filters label{width:100%}}
