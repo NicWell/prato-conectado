@@ -1,6 +1,6 @@
 # Contrato de autenticação — Integração React / FastAPI
 
-**Etapa atual:** login/cadastro local e autenticação/vinculação Google no backend. Consulte [cadastro](cadastro_real.md) e [Google](integracao_google.md). Aprovação, recuperação de senha e doações continuam pendentes. O frontend deste repositório ainda integra somente o login local.
+**Etapa atual:** login/cadastro local e autenticação/vinculação Google no backend. Consulte [cadastro](cadastro_real.md) e [Google](integracao_google.md). Aprovação, recuperação de senha e doações continuam pendentes. O React integra login, cadastro, Google, vinculação e conclusão de perfil.
 
 ## Endpoints
 
@@ -62,9 +62,9 @@ VITE_AUTH_MODE=api
 VITE_API_URL=http://localhost:8000
 ```
 
-O `docker-compose.frontend.yml` anterior continua iniciando a interface inteiramente simulada. Somente a autenticação foi integrada à API; a navegação de doações e os formulários restantes permanecem locais e **não podem ser considerados dados reais ou protegidos**.
+O `docker-compose.frontend.yml` inicia somente a interface, em modo API por padrão. Para simular sem backend, use `VITE_AUTH_MODE=mock`. Doações e reservas permanecem locais.
 
-O botão original "Entrar com Google (mock)" continua identificado como acesso a doador de teste em modo API: o frontend ainda não foi conectado aos novos endpoints Google. A tela de demonstração utiliza a senha ilustrativa `Teste@123` gravada no protótipo. Se mudar `DEMO_PASSWORD`, o login manual continua funcionando, mas os atalhos demonstrativos precisarão ser alinhados com o time frontend.
+No modo API, o botão oficial Google usa GIS e os endpoints reais. Atalhos mock ficam restritos ao modo mock. Contas demo do servidor usam login manual com `DEMO_PASSWORD` e seed habilitado.
 
 ## SQL e Docker
 
@@ -78,11 +78,15 @@ Para consultar o banco no VS Code usando SQLTools, configure host `localhost`, p
 
 `POST /api/auth/cadastro` retorna `201` no mesmo formato do login. `perfil` também pode ser `PESSOA_FISICA`; nesse caso, `id` identifica o perfil em `doadores_pessoa_fisica`. O contrato antigo de login para organizações é preservado. Para proteger senhas/documentos, respostas `422` omitem o payload recebido e mantêm apenas `loc`, `msg` e `type` por erro.
 
-O Compose aplica migrations até 004 em volumes novos. Em volumes existentes, aplique as pendentes conforme [database/README.md](../database/README.md). A integração React dos novos endpoints continua pendente.
+O Compose aplica migrations até 004 em volumes novos. Em volumes existentes, aplique as pendentes conforme [database/README.md](../database/README.md). A integração React dos novos endpoints está implementada.
 
 ## Próximas entregas
 
-- HU01: configurar o Client ID do projeto, integrar GIS no frontend e validar o fluxo real; os endpoints backend estão implementados.
-- HU02/HU04: integrar o cadastro real no React e completar o fluxo documental de aprovação; o endpoint de cadastro já está implementado.
+- HU01: configurar o Client ID do projeto e validar o fluxo real; backend e GIS no React estão implementados.
+- HU02/HU04: completar o fluxo documental e registrar aceite; cadastro real e React já estão implementados.
 - HU05: aprovação administrativa, trilha de auditoria e autorização por organização.
 - Segurança pré-produção: TLS/HTTPS, rate limiting por IP e conta, proteção contra XSS, gestão/revogação de sessão e política de segredos.
+
+## Sessão expirada
+
+Ao receber 401 em operação autenticada, o frontend limpa JWT e usuário, retorna a `/entrar` e informa a expiração. Na inicialização, `/me` com 401 retorna sessão ausente sem erro fatal. Falhas de rede/servidor preservam a sessão. Erros de senha, token ou desafio na vinculação Google não encerram uma sessão local válida. Sair limpa a sessão no navegador; não há revogação do JWT no servidor.

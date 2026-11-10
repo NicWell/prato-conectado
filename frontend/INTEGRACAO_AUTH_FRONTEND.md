@@ -25,7 +25,7 @@ Implementação sobre a versão enviada do Prato Conectado, de acordo com `docs/
 - `src/index.css` — campos e botão Google, mantendo o painel vermelho e a rolagem direita.
 - `tests/integracao.test.mjs` — testes de payload, validação e erros.
 
-A página antiga `src/pages/CadastroDoador.jsx` e `services/organizacoes.js` são legado e **não devem ser utilizados para novos cadastros**. O endpoint `/api/organizacoes` do legado não existe. O fluxo atual usa `AuthScreens.jsx` e `/api/auth/cadastro`.
+A página antiga `src/pages/CadastroDoador.jsx` e `services/organizacoes.js` são legado e **não devem ser utilizados para novos cadastros**. O serviço legado permite somente simulação explícita (`VITE_MOCK_CADASTRO=true`); fora disso, orienta usar a tela atual e não faz requisições HTTP. O fluxo atual usa `AuthScreens.jsx` e `/api/auth/cadastro`.
 
 ## 1. Executar frontend local
 

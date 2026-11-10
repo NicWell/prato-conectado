@@ -1,8 +1,8 @@
 # Prato Conectado — Documentação e diagramas (v1.1)
 
-O repositório contém backend FastAPI, frontend React, PostgreSQL e Docker Compose. Login/cadastro local e autenticação/vinculação Google estão implementados no backend; Google depende do Client ID e integração GIS da equipe frontend. O frontend atual integra somente o login local. Doações e aprovação continuam em modelagem. A planilha histórica de aceite não está no repositório; os registros de aceite não foram revalidados.
+O repositório contém backend FastAPI, frontend React, PostgreSQL e Docker Compose. Login/cadastro local, autenticação/vinculação Google e conclusão de perfil estão implementados no backend e integrados ao React. Google depende do Client ID e das origens autorizadas. Doações e aprovação continuam em modelagem. A planilha histórica de aceite não está no repositório; os registros de aceite não foram revalidados.
 
-Contrato atual: [cadastro real](cadastro_real.md), [login](integracao_login.md), [Google](integracao_google.md), [migrations](../database/README.md). Os READMEs antigos dentro de `frontend/` descrevem o protótipo; para o estado da integração backend, use estes contratos e o README raiz.
+Contrato atual: [cadastro real](cadastro_real.md), [login](integracao_login.md), [Google](integracao_google.md), [migrations](../database/README.md). Veja também o [frontend](../frontend/README.md) e o [roteiro de validação](validacao_autenticacao.md), que distinguem os fluxos reais das demonstrações locais.
 
 ## Acesso rápido
 
