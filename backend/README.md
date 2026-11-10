@@ -1,15 +1,18 @@
 # Backend de autenticação — Prato Conectado
 
-API FastAPI para **login e cadastro por e-mail/senha**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). Cadastro de ONG/empresa usa CNPJ numérico ou alfanumérico; doador pessoa física usa CPF. Aprovação, Google e doações continuam pendentes.
+API FastAPI para **login/cadastro local e autenticação Google**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). ONG/empresa usa CNPJ numérico ou alfanumérico; pessoa física usa CPF. Aprovação e doações continuam pendentes. Google exige configuração e integração frontend.
 
 - `POST /api/auth/login` — recebe JSON `{ "email": "...", "senha": "..." }`, devolve token e perfil.
 - `POST /api/auth/cadastro` — cria conta, credencial e perfil `PENDENTE` em transação; retorna `201` com token e usuário. Veja [campos e exemplos](../docs/cadastro_real.md).
 - `GET /api/auth/me` — recebe `Authorization: Bearer <token>`; valida assinatura/expiração e consulta o usuário ativo no banco.
+- `POST /api/auth/perfil` — conclui o perfil da conta autenticada, sem senha/e-mail/responsável no payload.
+- `POST /api/auth/google/desafio` e `POST /api/auth/google` — desafio OIDC e troca do ID token Google por JWT da aplicação.
+- `POST /api/auth/google/vincular/desafio` e `POST /api/auth/google/vincular` — vinculação autenticada com reconfirmação da senha local.
 - `GET /health` — liveness.
 - `GET /health/ready` — verifica conexão com o banco.
 - `/docs` — Swagger/OpenAPI.
 
-A credencial local foi adicionada à modelagem existente por `database/002_credenciais_locais.sql`. O campo `usuarios.google_sub` passa a ser opcional, mas continua único quando preenchido. O login Google (HU01) **não foi implementado**: exige configurar credenciais Google, verificar tokens ID e conectar o botão oficial do Google.
+A credencial local foi adicionada por 002; `usuarios.google_sub` é opcional e único. A migration 004 acrescenta desafios de uso único para Google. Configure `GOOGLE_CLIENT_ID` no `.env` raiz; vazio desabilita somente Google com 503. Não há Client Secret neste fluxo. Veja [contrato, configuração e testes Google](../docs/integracao_google.md). O backend nunca une contas só pela coincidência de e-mail.
 
 ## Execução
 
@@ -42,7 +45,7 @@ $login = Invoke-RestMethod -Uri http://localhost:8000/api/auth/login -Method Pos
 Invoke-RestMethod -Uri http://localhost:8000/api/auth/me -Headers @{ Authorization = "Bearer $($login.access_token)" }
 ```
 
-**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Volumes existentes exigem as migrations pendentes (002 e/ou 003) antes de iniciar o backend. Veja [backup e aplicação](../database/README.md). Não remova volumes com dados.
+**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Volumes existentes exigem as migrations pendentes até 004 antes de iniciar o backend. Veja [backup e aplicação](../database/README.md). Não remova volumes com dados.
 
 ### Testes automatizados
 
@@ -52,7 +55,7 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-Sem configuração adicional, os testes usam SQLite em memória. Para validar o SQL real, defina `TEST_DATABASE_URL` com URL `postgresql+psycopg://...` de um **banco descartável e isolado**. Cada teste cria/remove um schema `teste_<uuid>` próprio e aplica os três scripts. A suíte cobre cadastro, validações, duplicidade, rollback e regressão do login. Testes específicos de migration são pulados em SQLite.
+Sem configuração adicional, os testes usam SQLite em memória. Para validar o SQL real, defina `TEST_DATABASE_URL` com URL `postgresql+psycopg://...` de um **banco descartável e isolado**. Cada teste cria/remove um schema `teste_<uuid>` próprio e aplica os quatro scripts. A suíte cobre cadastro, validações, duplicidade, rollback e regressão do login. Testes Google assinam tokens com chave de teste e substituem somente o download dos certificados, mantendo validação criptográfica real. Não usam Client ID real nem dependem de rede. Testes exclusivos de migration/concorrência PostgreSQL são pulados em SQLite.
 
 Models: `app/models/entities.py`; schema de cadastro: `app/schemas/cadastro.py`; transação: `app/services/cadastro.py`; rotas: `app/api/auth.py`. Os schemas antigos de login permanecem no módulo de autenticação.
 

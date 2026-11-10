@@ -4,6 +4,15 @@ Visualização nativa: no VS Code use **Ctrl+Shift+V**. Os identificadores em ma
 
 ```mermaid
 erDiagram
+    USUARIOS o|--o{ DESAFIOS_GOOGLE : "usuario_id_vinculacao"
+    DESAFIOS_GOOGLE {
+        uuid id PK
+        varchar nonce_hash UK
+        varchar finalidade
+        uuid usuario_id FK
+        timestamptz expira_em
+        timestamptz consumido_em
+    }
     USUARIOS ||--o| CREDENCIAIS_LOCAIS : "usuario_id"
     USUARIOS ||--o| DOADORES_PESSOA_FISICA : "usuario_responsavel_id"
     CREDENCIAIS_LOCAIS {

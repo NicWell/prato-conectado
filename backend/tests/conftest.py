@@ -5,6 +5,7 @@ os.environ["JWT_SECRET_KEY"] = "chave-para-testes-automatizados-apenas-com-mais-
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
 os.environ["SEED_DEMO_USERS"] = "false"
 os.environ["APP_ENV"] = "development"
+os.environ["GOOGLE_CLIENT_ID"] = ""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -28,7 +29,7 @@ def db():
         engine = create_engine(test_url, connect_args={"options": f"-csearch_path={schema}"})
         scripts = Path(__file__).resolve().parents[2] / "database"
         with engine.connect() as conn:
-            for script in ("schema_postgresql.sql", "002_credenciais_locais.sql", "003_cadastro_real.sql"):
+            for script in ("schema_postgresql.sql", "002_credenciais_locais.sql", "003_cadastro_real.sql", "004_google.sql"):
                 conn.connection.driver_connection.execute((scripts / script).read_text(encoding="utf-8"))
                 conn.commit()
     else:

@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from app.api.auth import router as auth_router
+from app.api.google import router as google_router
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.seed import seed_demo_accounts
@@ -19,7 +20,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Prato Conectado — Autenticação e Cadastro", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Prato Conectado — Autenticação e Cadastro", version="0.3.0", lifespan=lifespan)
 
 
 @app.exception_handler(RequestValidationError)
@@ -37,6 +38,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(auth_router)
+app.include_router(google_router)
 
 
 @app.get("/health", tags=["Infraestrutura"])

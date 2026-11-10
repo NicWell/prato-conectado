@@ -1,8 +1,8 @@
 # Prato Conectado — Documentação e diagramas (v1.1)
 
-O repositório contém backend FastAPI, frontend React, PostgreSQL e Docker Compose. Login e cadastro por e-mail/senha estão implementados no backend; o frontend integra somente o login. A modelagem de doações e aprovação continua sendo proposta de evolução. A planilha histórica “Gestão de Projeto - Acompanhamento de Histórias e Aceite.xlsx” não está no repositório; os registros de aceite não foram revalidados.
+O repositório contém backend FastAPI, frontend React, PostgreSQL e Docker Compose. Login/cadastro local e autenticação/vinculação Google estão implementados no backend; Google depende do Client ID e integração GIS da equipe frontend. O frontend atual integra somente o login local. Doações e aprovação continuam em modelagem. A planilha histórica de aceite não está no repositório; os registros de aceite não foram revalidados.
 
-Contrato atual: [cadastro real](cadastro_real.md), [login](integracao_login.md), [migrations](../database/README.md). Os READMEs antigos dentro de `frontend/` descrevem o protótipo; para o estado da integração backend, use estes contratos e o README raiz.
+Contrato atual: [cadastro real](cadastro_real.md), [login](integracao_login.md), [Google](integracao_google.md), [migrations](../database/README.md). Os READMEs antigos dentro de `frontend/` descrevem o protótipo; para o estado da integração backend, use estes contratos e o README raiz.
 
 ## Acesso rápido
 
@@ -11,7 +11,7 @@ Contrato atual: [cadastro real](cadastro_real.md), [login](integracao_login.md),
 | [`diagramas/diagrama_classes.md`](diagramas/diagrama_classes.md) | Diagrama UML conceitual editável no VS Code |
 | [`diagramas/diagrama_banco.md`](diagramas/diagrama_banco.md) | Diagrama entidade-relacionamento (Mermaid) |
 | [`banco/modelo_banco.dbml`](banco/modelo_banco.dbml) | Modelo relacional DBML editável / importável |
-| [`../database/schema_postgresql.sql`](../database/schema_postgresql.sql) | Baseline histórico; aplicar também migrations 002 e 003 |
+| [`../database/schema_postgresql.sql`](../database/schema_postgresql.sql) | Baseline histórico; aplicar também migrations 002–004 |
 | [`banco/dicionario_dados.md`](banco/dicionario_dados.md) | Tabelas, colunas e tipos exatos |
 | [`requisitos_e_rastreabilidade.md`](requisitos_e_rastreabilidade.md) | Vinculação de cada HU com tabelas e critérios de aceite |
 | [`regras_de_negocio.md`](regras_de_negocio.md) | Validações de domínio e questões pendentes |
@@ -34,6 +34,7 @@ createdb -U postgres prato_conectado
 psql -U postgres -d prato_conectado -f database/schema_postgresql.sql
 psql -U postgres -d prato_conectado -f database/002_credenciais_locais.sql
 psql -U postgres -d prato_conectado -f database/003_cadastro_real.sql
+psql -U postgres -d prato_conectado -f database/004_google.sql
 ```
 
 Execute esses comandos na raiz e somente em banco vazio. Para banco existente, siga [migrations e backup](../database/README.md). Não é necessário criar banco para visualizar diagramas.

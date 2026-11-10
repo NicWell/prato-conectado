@@ -35,6 +35,10 @@ def test_003_preserva_dados_anteriores():
             conn.commit()
             conn.connection.driver_connection.execute((scripts / "003_cadastro_real.sql").read_text(encoding="utf-8"))
             conn.commit()
+            conn.connection.driver_connection.execute((scripts / "004_google.sql").read_text(encoding="utf-8"))
+            conn.commit()
+            conn.connection.driver_connection.execute((scripts / "004_google.sql").read_text(encoding="utf-8"))
+            conn.commit()
             assert conn.exec_driver_sql("SELECT * FROM organizacoes").all() == antes
             assert conn.exec_driver_sql("SELECT nome FROM usuarios").scalar_one() == "Legado"
     finally:

@@ -8,8 +8,8 @@ from app.core.config import settings
 from app.core.security import issue_access_token, read_access_token, verify_password
 from app.db.session import get_db
 from app.models import CredencialLocal, DoadorPessoaFisica, Organizacao, Usuario
-from app.schemas.cadastro import CadastroPayload
-from app.services.cadastro import CadastroDuplicado, cadastrar_conta
+from app.schemas.cadastro import CadastroPayload, PerfilPayload
+from app.services.cadastro import CadastroDuplicado, cadastrar_conta, completar_perfil
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticação"])
 bearer = HTTPBearer(auto_error=False)
@@ -30,6 +30,8 @@ class UsuarioPublico(BaseModel):
     perfil: str
     status: str
     papel_sistema: str
+    cadastro_completo: bool
+    google_vinculado: bool
 
 
 class LoginResponse(BaseModel):
@@ -63,6 +65,8 @@ def get_user_view(db: Session, usuario: Usuario) -> UsuarioPublico:
         perfil=perfil,
         status=cadastro.status_verificacao if cadastro else "PENDENTE",
         papel_sistema=usuario.papel_sistema,
+        cadastro_completo=cadastro is not None,
+        google_vinculado=usuario.google_sub is not None,
     )
 
 
@@ -116,4 +120,13 @@ def current_user(
 
 @router.get("/me", response_model=UsuarioPublico)
 def me(usuario: Usuario = Depends(current_user), db: Session = Depends(get_db)):
+    return get_user_view(db, usuario)
+
+
+@router.post("/perfil", response_model=UsuarioPublico, status_code=status.HTTP_201_CREATED)
+def concluir_cadastro(payload: PerfilPayload, usuario: Usuario = Depends(current_user), db: Session = Depends(get_db)):
+    try:
+        usuario = completar_perfil(db, usuario, payload)
+    except CadastroDuplicado as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
     return get_user_view(db, usuario)

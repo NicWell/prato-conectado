@@ -1,6 +1,6 @@
 # Cadastro real — contrato backend / frontend
 
-Implementado: cadastro por e-mail/senha de ONG, doador empresa e doador pessoa física. Google, aprovação administrativa, verificação de e-mail, documentos e recuperação de senha continuam pendentes. Nenhum arquivo do frontend foi alterado.
+Implementado: cadastro por e-mail/senha de ONG, empresa e pessoa física. Login/vinculação Google e conclusão de perfil autenticada estão descritos em [integração Google](integracao_google.md). Aprovação administrativa, verificação de e-mail local, documentos e recuperação de senha continuam pendentes. Nenhum arquivo do frontend foi alterado.
 
 ## Conta e perfil
 
@@ -62,12 +62,12 @@ Campos incompatíveis devem ser omitidos ou enviados como `null`. Campos desconh
 - `409`: `detail` informa e-mail/documento já cadastrado, inclusive em conflitos concorrentes. Não mantém conta parcial.
 - `422`: `detail` é lista com `loc`, `msg`, `type`; não contém o payload recebido. Validadores de campo apontam seu campo; combinações inconsistentes apontam `body`.
 
-`usuario` conserva `id`, `usuario_id`, `nome`, `email`, `responsavel`, `tipo`, `perfil`, `status`, `papel_sistema`. `id` identifica a organização ou o perfil PF; `usuario_id` identifica a conta. O novo valor de `perfil` é `PESSOA_FISICA`. CPF, CNPJ, endereço e senha não são expostos por cadastro, login ou `/me`.
+`usuario` conserva `id`, `usuario_id`, `nome`, `email`, `responsavel`, `tipo`, `perfil`, `status`, `papel_sistema` e acrescenta `cadastro_completo` e `google_vinculado`. `id` identifica a organização ou o perfil PF; `usuario_id` identifica a conta. O novo valor de `perfil` é `PESSOA_FISICA`. CPF, CNPJ, endereço e senha não são expostos por cadastro, login ou `/me`.
 
 O frontend não deve enviar `status`, `papel_sistema`, `ativo`, `google_sub` ou IDs. O contrato de sucesso do login permanece igual; erros `422` agora omitem valores recebidos para proteger dados pessoais. A integração React do cadastro é tarefa da equipe de frontend.
 
 ## Limites
 
-Não há edição, upload, aprovação, consulta de documentos, revogação de token ou Google. A integração Google futura deverá autenticar a conta e permitir completar o perfil; vinculação de conta existente exigirá prova de titularidade, nunca apenas coincidência de e-mail.
+Não há edição, upload, aprovação, consulta de documentos ou revogação de token. Google autentica a conta e permite completar o perfil pelo endpoint protegido `/api/auth/perfil`, que recebe os mesmos campos de perfil sem `email`, `senha` e `responsavel`. Vinculação com conta local exige JWT, senha atual e identidade Google verificada, sem união automática por e-mail.
 
 As tabelas futuras de doação/termos ainda referenciam `organizacoes`. Antes de habilitar operações para PF, será necessário evoluir esses relacionamentos e sua aprovação. Esta entrega permite cadastro/login PF; não oferece operações de doação no backend.

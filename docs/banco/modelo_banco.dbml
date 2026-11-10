@@ -5,7 +5,7 @@ Project PratoConectado {
 
 Table usuarios {
   id uuid [pk, default: `gen_random_uuid()`]
-  google_sub varchar(255) [unique, note: 'Opcional após 002; Google ainda não integrado']
+  google_sub varchar(255) [unique, note: 'Identidade Google estável; opcional para conta local']
   nome varchar(160) [not null]
   email varchar(255) [not null]
   papel_sistema varchar(20) [not null, default: 'USUARIO']
@@ -169,7 +169,7 @@ Table notificacoes {
   criado_em timestamptz [not null, default: `NOW()`]
 }
 
-// Implementado pelas migrations 002 e 003. Demais domínios são modelagem.
+// Autenticação/cadastro implementados pelas migrations 002-004; demais domínios são modelagem.
 Table credenciais_locais {
   usuario_id uuid [pk, ref: > usuarios.id]
   senha_hash varchar(255) [not null]
@@ -197,4 +197,16 @@ Table doadores_pessoa_fisica {
 Table schema_migrations {
   versao varchar(80) [pk]
   aplicada_em timestamptz [not null, default: `NOW()`]
+}
+
+Table desafios_google {
+  id uuid [pk, default: `gen_random_uuid()`]
+  nonce_hash varchar(64) [not null, unique]
+  finalidade varchar(10) [not null, note: 'LOGIN sem usuario_id ou VINCULAR com usuario_id']
+  usuario_id uuid [ref: > usuarios.id]
+  expira_em timestamptz [not null]
+  consumido_em timestamptz
+  indexes {
+    expira_em
+  }
 }

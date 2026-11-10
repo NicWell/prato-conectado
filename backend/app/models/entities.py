@@ -70,3 +70,17 @@ class DoadorPessoaFisica(Base):
     cep: Mapped[str] = mapped_column(String(8), nullable=False)
     status_verificacao: Mapped[str] = mapped_column(String(12), nullable=False, default="PENDENTE")
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DesafioGoogle(Base):
+    __tablename__ = "desafios_google"
+    __table_args__ = (
+        CheckConstraint("finalidade IN ('LOGIN', 'VINCULAR')", name="chk_desafio_google_finalidade"),
+        CheckConstraint("(finalidade = 'LOGIN' AND usuario_id IS NULL) OR (finalidade = 'VINCULAR' AND usuario_id IS NOT NULL)", name="chk_desafio_google_usuario"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    nonce_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    finalidade: Mapped[str] = mapped_column(String(10), nullable=False)
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("usuarios.id"))
+    expira_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    consumido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

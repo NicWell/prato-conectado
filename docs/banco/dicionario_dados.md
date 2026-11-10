@@ -1,6 +1,6 @@
 # Dicionário de dados — Prato Conectado
 
-Versão **1.1** — esquema após migrations 002 e 003; autenticação/cadastro implementados e demais domínios ainda modelados.
+Versão **1.2** — esquema após migrations 002–004; autenticação local/Google e cadastro implementados, demais domínios ainda modelados.
 
 **Convenções:** PK = chave primária; FK = chave estrangeira; UK = único. O SQL define UUIDs por `gen_random_uuid()`; o ORM também pode gerar UUIDs em Python. `TIMESTAMPTZ` preserva instante com fuso. E-mails e documentos são validados pela API.
 
@@ -11,7 +11,7 @@ Pessoas autenticadas por conta Google e administradores da plataforma.
 | Coluna | Tipo PostgreSQL | Regras | Descrição |
 |---|---|---|---|
 | `id` | `UUID` | PK, padrão: `gen_random_uuid()` | Identificador do usuário. |
-| `google_sub` | `VARCHAR(255)` | UK, opcional após 002 | Identificador da conta Google; integração pendente. |
+| `google_sub` | `VARCHAR(255)` | UK, opcional após 002 | Identificador estável da conta Google, validado pelo backend. |
 | `nome` | `VARCHAR(160)` | obrigatório | Nome apresentado na plataforma. |
 | `email` | `VARCHAR(255)` | obrigatório | Endereço de e-mail obtido da autenticação Google. |
 | `papel_sistema` | `VARCHAR(20)` | obrigatório, padrão: `'USUARIO'`, CHECK | USUARIO ou ADMINISTRADOR. |
@@ -265,6 +265,10 @@ O SQL traz índices para status e janela da doação, categoria/validade do item
 
 `schema_migrations` é tabela técnica: `versao VARCHAR(80) PRIMARY KEY` e `aplicada_em TIMESTAMPTZ NOT NULL DEFAULT NOW()`, com rastreio a partir de 003; sem presumir histórico das migrations legadas.
 
-O ORM representa somente Usuario, CredencialLocal, Organizacao e DoadorPessoaFisica. Não confundir tabela criada com funcionalidade implementada.
+### desafios_google (004)
+
+`id UUID PRIMARY KEY DEFAULT gen_random_uuid()`, `nonce_hash VARCHAR(64) NOT NULL UNIQUE`, `finalidade VARCHAR(10) NOT NULL`, `usuario_id UUID REFERENCES usuarios(id)` opcional, `expira_em TIMESTAMPTZ NOT NULL` com índice e `consumido_em TIMESTAMPTZ` opcional. CHECKs permitem LOGIN sem usuário ou VINCULAR com usuário. O nonce original não é armazenado. Consumo condicional ocorre na transação de login/vinculação e impede replay, inclusive concorrente. Limpeza de desafios expirados ainda não é agendada.
+
+O ORM representa Usuario, CredencialLocal, Organizacao, DoadorPessoaFisica e DesafioGoogle. Não confundir tabela criada com funcionalidade implementada.
 
 Regras de negócio que envolvem horário corrente, situação de aprovação e validações entre registros não são totalmente expressáveis por `CHECK` simples. Devem ser implementadas no backend Python e testadas em transações PostgreSQL.

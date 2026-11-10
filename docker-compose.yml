@@ -13,6 +13,7 @@ services:
       - ./database/schema_postgresql.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./database/002_credenciais_locais.sql:/docker-entrypoint-initdb.d/02_login_local.sql:ro
       - ./database/003_cadastro_real.sql:/docker-entrypoint-initdb.d/03_cadastro_real.sql:ro
+      - ./database/004_google.sql:/docker-entrypoint-initdb.d/04_google.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -34,6 +35,7 @@ services:
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       SEED_DEMO_USERS: ${SEED_DEMO_USERS:-false}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     depends_on:
       db:
         condition: service_healthy

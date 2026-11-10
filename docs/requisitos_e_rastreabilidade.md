@@ -4,7 +4,7 @@
 
 ## Estado técnico atual (sem alterar aceite acadêmico)
 
-Login por e-mail/senha e `POST /api/auth/cadastro` estão implementados. HU01 (Google) permanece pendente. HU02/HU04 têm cadastro backend, incluindo doador PF como extensão confirmada, mas dependem da integração React e do fluxo documental. HU03/HU05 e operações HU06–HU09 ainda não possuem endpoints. O frontend demonstra parte desses fluxos localmente. Consulte [contrato atual](cadastro_real.md).
+Login por e-mail/senha, cadastro e backend Google estão implementados. HU01 depende de configuração Client ID, integração GIS e aceite; consulte [contrato Google](integracao_google.md). HU02/HU04 têm cadastro backend, incluindo doador PF como extensão confirmada, mas dependem da integração React e do fluxo documental. HU03/HU05 e operações HU06–HU09 ainda não possuem endpoints. O frontend demonstra parte desses fluxos localmente. Consulte [cadastro](cadastro_real.md).
 
 A planilha citada não está no repositório; o status de aceite abaixo é registro histórico, não comprovação de aceitação da implementação atual.
 

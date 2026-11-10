@@ -5,13 +5,17 @@ backend/
     main.py                  FastAPI, CORS, health e erros de validação
     seed.py                  Contas demonstrativas opcionais
     api/auth.py              Cadastro, login, /me e schemas de login
+    api/google.py            Desafios, login Google e vinculação autenticada
     core/config.py           Variáveis de ambiente
     core/security.py         Argon2id e JWT
+    core/google_auth.py      Verificação criptográfica Google via google-auth
     core/documentos.py       CPF e CNPJ numérico/alfanumérico
     db/session.py            Engine e sessões SQLAlchemy
-    models/entities.py       Usuario, CredencialLocal, Organizacao, DoadorPessoaFisica
+    models/entities.py       Usuario, CredencialLocal, Organizacao, DoadorPessoaFisica, DesafioGoogle
     schemas/cadastro.py      Entrada e validações do cadastro
+    schemas/google.py        Contratos dos desafios e tokens Google
     services/cadastro.py     Transação de criação da conta e perfil
+    services/google.py       Identidade, vinculação e consumo atômico de desafio
   tests/                     Autenticação, cadastro e migrations PostgreSQL
   requirements.txt
   requirements-dev.txt
@@ -31,10 +35,12 @@ database/
   schema_postgresql.sql      Baseline histórico
   002_credenciais_locais.sql
   003_cadastro_real.sql
+  004_google.sql
   README.md                  Ordem, backup e aplicação em volumes existentes
 docs/
   cadastro_real.md            Contrato atual para integração frontend
   integracao_login.md
+  integracao_google.md
   requisitos_e_rastreabilidade.md
   regras_de_negocio.md
   banco/                     DBML e dicionário
@@ -42,4 +48,4 @@ docs/
 docker-compose.yml           PostgreSQL + backend + frontend (login API)
 docker-compose.frontend.yml  Frontend demonstrativo independente
 
-Não há Alembic, endpoints operacionais de doações ou integração Google nesta etapa.
+Não há Alembic ou endpoints operacionais de doações. Google exige Client ID e integração frontend; configuração e contrato estão documentados.

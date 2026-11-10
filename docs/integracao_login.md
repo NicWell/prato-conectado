@@ -1,6 +1,6 @@
 # Contrato de autenticação — Integração React / FastAPI
 
-**Etapa atual:** login e cadastro por e-mail/senha com JWT, persistidos no PostgreSQL. O [contrato de cadastro](cadastro_real.md) cobre ONG, empresa e pessoa física. Google, aprovação, recuperação de senha e doações continuam pendentes. O frontend ainda integra somente o login.
+**Etapa atual:** login/cadastro local e autenticação/vinculação Google no backend. Consulte [cadastro](cadastro_real.md) e [Google](integracao_google.md). Aprovação, recuperação de senha e doações continuam pendentes. O frontend deste repositório ainda integra somente o login local.
 
 ## Endpoints
 
@@ -28,7 +28,9 @@ Resposta de sucesso (200; IDs e token são ilustrativos):
     "tipo": "DOADOR",
     "perfil": "EMPRESA",
     "status": "APROVADA",
-    "papel_sistema": "USUARIO"
+    "papel_sistema": "USUARIO",
+    "cadastro_completo": true,
+    "google_vinculado": false
   }
 }
 ```
@@ -62,11 +64,11 @@ VITE_API_URL=http://localhost:8000
 
 O `docker-compose.frontend.yml` anterior continua iniciando a interface inteiramente simulada. Somente a autenticação foi integrada à API; a navegação de doações e os formulários restantes permanecem locais e **não podem ser considerados dados reais ou protegidos**.
 
-O botão original "Entrar com Google (mock)" é identificado como acesso a doador de teste quando em modo API, porque esta etapa não possui OAuth Google. A tela de demonstração utiliza a senha ilustrativa `Teste@123` gravada no protótipo. Se mudar `DEMO_PASSWORD`, o login manual continua funcionando, mas os atalhos de acesso demonstrativo precisarão ser alinhados com o time de frontend.
+O botão original "Entrar com Google (mock)" continua identificado como acesso a doador de teste em modo API: o frontend ainda não foi conectado aos novos endpoints Google. A tela de demonstração utiliza a senha ilustrativa `Teste@123` gravada no protótipo. Se mudar `DEMO_PASSWORD`, o login manual continua funcionando, mas os atalhos demonstrativos precisarão ser alinhados com o time frontend.
 
 ## SQL e Docker
 
-Na primeira criação do banco, o container `db` executa `database/schema_postgresql.sql`, `database/002_credenciais_locais.sql` e `database/003_cadastro_real.sql`, nessa ordem. O segundo script torna `google_sub` opcional e cria as credenciais locais; o terceiro habilita CNPJ alfanumérico e perfis PF. O login não insere contas: elas são criadas pelo cadastro ou pelo seed opcional de desenvolvimento.
+Na primeira criação do banco, o container `db` executa baseline e migrations 002, 003 e 004, nessa ordem. A 002 cria credenciais locais; a 003 habilita CNPJ alfanumérico e PF; a 004 cria desafios Google. O login local não insere contas: elas são criadas pelo cadastro, primeiro acesso Google ou seed opcional de desenvolvimento.
 
 Em bancos existentes, aplique somente as migrations pendentes, após backup, conforme [database/README.md](../database/README.md). Os scripts de inicialização não rodam novamente em volumes com dados.
 
@@ -76,11 +78,11 @@ Para consultar o banco no VS Code usando SQLTools, configure host `localhost`, p
 
 `POST /api/auth/cadastro` retorna `201` no mesmo formato do login. `perfil` também pode ser `PESSOA_FISICA`; nesse caso, `id` identifica o perfil em `doadores_pessoa_fisica`. O contrato antigo de login para organizações é preservado. Para proteger senhas/documentos, respostas `422` omitem o payload recebido e mantêm apenas `loc`, `msg` e `type` por erro.
 
-O Compose aplica também `003_cadastro_real.sql` em volumes novos. Em volumes existentes, aplique as migrations pendentes conforme [database/README.md](../database/README.md). A integração React do novo endpoint continua pendente.
+O Compose aplica migrations até 004 em volumes novos. Em volumes existentes, aplique as pendentes conforme [database/README.md](../database/README.md). A integração React dos novos endpoints continua pendente.
 
 ## Próximas entregas
 
-- HU01: login Google real — fluxo OAuth ou Google Identity Services com verificação do token Google no backend.
+- HU01: configurar o Client ID do projeto, integrar GIS no frontend e validar o fluxo real; os endpoints backend estão implementados.
 - HU02/HU04: integrar o cadastro real no React e completar o fluxo documental de aprovação; o endpoint de cadastro já está implementado.
 - HU05: aprovação administrativa, trilha de auditoria e autorização por organização.
 - Segurança pré-produção: TLS/HTTPS, rate limiting por IP e conta, proteção contra XSS, gestão/revogação de sessão e política de segredos.

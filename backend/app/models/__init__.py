@@ -1,2 +1,2 @@
-from .entities import Usuario, CredencialLocal, Organizacao, DoadorPessoaFisica
-__all__ = ["Usuario", "CredencialLocal", "Organizacao", "DoadorPessoaFisica"]
+from .entities import Usuario, CredencialLocal, Organizacao, DoadorPessoaFisica, DesafioGoogle
+__all__ = ["Usuario", "CredencialLocal", "Organizacao", "DoadorPessoaFisica", "DesafioGoogle"]
