@@ -28,9 +28,13 @@ test('login e /me enviam Bearer do JWT da aplicação', async () => {
   assert.equal(chamadas[1].opcoes.headers.Authorization,'Bearer jwt-local');
 });
 test('401 autenticado apaga sessão e não mantém usuário no frontend', async () => {
+  const eventos = [];
+  window.dispatchEvent = evento => eventos.push(evento.type);
   instalarFetch(() => json({ detail:'Sessão expirada' },401));
-  await assert.rejects(() => validarSessaoApi(), err => err.status === 401);
+  assert.equal(await validarSessaoApi(), null);
   assert.equal(usuarioSessaoApi(),null);
+  assert.equal(sessionStorage.getItem('prato_conectado_api_access_token'), null);
+  assert.ok(eventos.includes('prato:sessao-expirada'));
 });
 test('cadastro real retorna e guarda sessão sem confirmação da senha', async () => {
   const chamadas=instalarFetch(() => json({ access_token:'jwt-2',usuario },201));
@@ -65,11 +69,41 @@ test('requisição autenticada em falha de conexão não apaga sessão válida',
   globalThis.fetch=async()=>{ throw new TypeError('network'); };
   await assert.rejects(() => requisicaoApi('/api/auth/me',{autenticada:true}),/Não foi possível conectar/);
   assert.ok(usuarioSessaoApi());
+  await assert.rejects(() => validarSessaoApi(), /Não foi possível conectar/);
+  assert.ok(usuarioSessaoApi());
 });
 
 test('senha Google incorreta não derruba JWT de sessão local',async()=>{
   const antes=usuarioSessaoApi();
+  const eventos=[];
+  window.dispatchEvent=evento=>eventos.push(evento.type);
   instalarFetch(()=>json({detail:{codigo:'SENHA_INVALIDA',mensagem:'Senha atual inválida.'}},401));
   await assert.rejects(()=>vincularGoogleApi('uuid3','google-token','errada'),e=>e.status===401&&e.codigo==='SENHA_INVALIDA');
   assert.equal(usuarioSessaoApi().usuario_id,antes.usuario_id);
+  assert.ok(!eventos.includes('prato:sessao-expirada'));
+});
+
+test('erro 503 ao restaurar sessão preserva JWT e permite tentar novamente', async () => {
+  const antes=usuarioSessaoApi();
+  instalarFetch(()=>json({detail:'Serviço indisponível'},503));
+  await assert.rejects(()=>validarSessaoApi(), e=>e.status===503);
+  assert.equal(usuarioSessaoApi().usuario_id,antes.usuario_id);
+  assert.equal(sessionStorage.getItem('prato_conectado_api_access_token'),'jwt-google');
+});
+
+test('usuário em cache sem JWT não restaura uma sessão autenticada', async () => {
+  sessionStorage.removeItem('prato_conectado_api_access_token');
+  const chamadas=instalarFetch(()=>{ throw new Error('Não deve consultar API sem JWT'); });
+  assert.equal(await validarSessaoApi(),null);
+  assert.equal(usuarioSessaoApi(),null);
+  assert.equal(chamadas.length,0);
+});
+
+test('operação protegida sem JWT encerra sessão e avisa expiração', async () => {
+  sessionStorage.setItem('prato_conectado_api_user',JSON.stringify(usuario));
+  const eventos=[];
+  window.dispatchEvent=evento=>eventos.push(evento.type);
+  await assert.rejects(()=>requisicaoApi('/api/auth/perfil',{method:'POST',autenticada:true}),e=>e.status===401);
+  assert.equal(usuarioSessaoApi(),null);
+  assert.ok(eventos.includes('prato:sessao-expirada'));
 });

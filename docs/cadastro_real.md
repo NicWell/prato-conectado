@@ -1,6 +1,6 @@
 # Cadastro real — contrato backend / frontend
 
-Implementado: cadastro por e-mail/senha de ONG, empresa e pessoa física. Login/vinculação Google e conclusão de perfil autenticada estão descritos em [integração Google](integracao_google.md). Aprovação administrativa, verificação de e-mail local, documentos e recuperação de senha continuam pendentes. Nenhum arquivo do frontend foi alterado.
+Implementado: cadastro por e-mail/senha de ONG, empresa e pessoa física. Login/vinculação Google e conclusão de perfil autenticada estão descritos em [integração Google](integracao_google.md). Aprovação administrativa, verificação de e-mail local, documentos e recuperação de senha continuam pendentes. O React integra cadastro e conclusão de perfil via `services/auth.js` e `AuthScreens.jsx`.
 
 ## Conta e perfil
 
@@ -64,7 +64,7 @@ Campos incompatíveis devem ser omitidos ou enviados como `null`. Campos desconh
 
 `usuario` conserva `id`, `usuario_id`, `nome`, `email`, `responsavel`, `tipo`, `perfil`, `status`, `papel_sistema` e acrescenta `cadastro_completo` e `google_vinculado`. `id` identifica a organização ou o perfil PF; `usuario_id` identifica a conta. O novo valor de `perfil` é `PESSOA_FISICA`. CPF, CNPJ, endereço e senha não são expostos por cadastro, login ou `/me`.
 
-O frontend não deve enviar `status`, `papel_sistema`, `ativo`, `google_sub` ou IDs. O contrato de sucesso do login permanece igual; erros `422` agora omitem valores recebidos para proteger dados pessoais. A integração React do cadastro é tarefa da equipe de frontend.
+O frontend não deve enviar `status`, `papel_sistema`, `ativo`, `google_sub` ou IDs. O contrato de sucesso do login permanece igual; erros `422` agora omitem valores recebidos para proteger dados pessoais. A integração React do cadastro está implementada; o fluxo documental e a aprovação continuam pendentes.
 
 ## Limites
 

@@ -31,8 +31,15 @@ export default function App() {
   useEffect(() => {
     let ativo = true;
     const onHash = () => setRota(lerRota());
+    const onSessaoExpirada = () => {
+      if (!ativo) return;
+      setUsuario(null);
+      setAviso('Sua sessão expirou. Entre novamente para continuar.');
+      navegar('/entrar');
+    };
     window.addEventListener('hashchange', onHash);
     window.addEventListener('prato:sessao-alterada', atualizarDados);
+    window.addEventListener('prato:sessao-expirada', onSessaoExpirada);
     (async () => {
       try {
         // A inicialização do mock nunca pode impedir o login real.
@@ -46,8 +53,8 @@ export default function App() {
         }
       } catch (e) { if (ativo) { setFatal(e.message); setPronto(true); } }
     })();
-    return () => { ativo = false; window.removeEventListener('hashchange', onHash); window.removeEventListener('prato:sessao-alterada', atualizarDados); };
-  }, [atualizarDados]);
+    return () => { ativo = false; window.removeEventListener('hashchange', onHash); window.removeEventListener('prato:sessao-alterada', atualizarDados); window.removeEventListener('prato:sessao-expirada', onSessaoExpirada); };
+  }, [atualizarDados, navegar]);
   useEffect(() => { localStorage.setItem('prato_tema', tema); }, [tema]);
   const alternarTema = () => setTema(t => t === 'dark' ? 'light' : 'dark');
   const entrar = async (email, senha) => {

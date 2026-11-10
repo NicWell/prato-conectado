@@ -1,6 +1,6 @@
 # Google — autenticação, vinculação e conclusão de cadastro
 
-Backend implementado; a integração visual pertence à equipe frontend. O fluxo usa Google Identity Services (GIS), callback JavaScript e envio JSON pelo frontend. Não é um callback de redirecionamento OAuth nem aceita access token Google. Tokens Google não são armazenados. A aplicação emite seu próprio JWT após validar o ID token.
+Backend e integração React/GIS implementados em `services/auth.js`, `GoogleIdentityButton.jsx` e `AuthScreens.jsx`. O fluxo usa Google Identity Services (GIS), callback JavaScript e envio JSON pelo frontend. Não é um callback de redirecionamento OAuth nem aceita access token Google. Tokens Google não são armazenados. A aplicação emite seu próprio JWT após validar o ID token.
 
 ## Configuração
 
@@ -13,6 +13,8 @@ GOOGLE_CLIENT_ID=SEU_CLIENT_ID.apps.googleusercontent.com
 ```
 
 É identificador público, não Client Secret. O frontend precisa usar o mesmo Client ID ao inicializar GIS. Não é necessário JSON de conta de serviço, Client Secret, Drive ou permissões de Gmail. Não alterar `FRONTEND_ORIGINS` para `*`.
+
+O Compose repassa `GOOGLE_CLIENT_ID` como argumento de build `VITE_GOOGLE_CLIENT_ID` ao React. Para Vite local, configure `VITE_GOOGLE_CLIENT_ID` em `frontend/.env.local` com o mesmo identificador. O botão oficial e os fluxos de primeiro acesso/vinculação já estão integrados. Reconstrua o frontend após alterar o Client ID.
 
 Aplicar a [migration 004](../database/README.md) antes de iniciar o backend atualizado em volume existente. Então executar `docker compose up --build -d`. Se o Client ID estiver vazio, as rotas Google retornam 503 `GOOGLE_NAO_CONFIGURADO`; login/cadastro local continuam funcionando. Alterar `.env` exige recriar o backend, não somente reiniciar seu processo.
 
@@ -97,6 +99,6 @@ Desafios duram cinco minutos; o banco guarda somente hash do nonce. O consumo oc
 
 O frontend deve guardar o desafio da tentativa que ele próprio iniciou e nunca aceitar desafio/token vindo de URL ou de mensagem sem origem validada. Este contrato não recebe POST automático GIS com cookie: se a equipe adotar `login_uri`/redirect, precisará de contrato separado com validação de CSRF. O callback JavaScript envia explicitamente JSON e usa Bearer nas rotas protegidas; a API não autentica por cookies.
 
-Não há alterações do frontend nesta entrega. Falta validar o consentimento real com o Client ID do projeto e a integração GIS da equipe. Testes automatizados usam certificados locais, sem bypass de validação em runtime. Aprovação, documentos, recuperação de senha e autorização operacional de doações permanecem fora desta etapa. A validação de e-mail Google não constitui comprovação de CPF/CNPJ. Monitoramento, rate limiting e limpeza periódica de desafios expirados devem ser incluídos na preparação para produção.
+A integração GIS no React está implementada. Falta registrar o aceite do consentimento real, primeiro acesso e vinculação com o Client ID do projeto. Testes automatizados usam certificados locais, sem bypass de validação em runtime. Aprovação, documentos, recuperação de senha e autorização operacional de doações permanecem fora desta etapa. A validação de e-mail Google não constitui comprovação de CPF/CNPJ. Monitoramento, rate limiting e limpeza periódica de desafios expirados devem ser incluídos na preparação para produção.
 
 Referências: [verificação no backend](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token), [nonce e callback GIS](https://developers.google.com/identity/gsi/web/reference/js-reference), [google-auth Python](https://google-auth.readthedocs.io/en/latest/reference/google.oauth2.id_token.html).

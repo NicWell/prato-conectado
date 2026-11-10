@@ -1,6 +1,6 @@
 # Backend de autenticação — Prato Conectado
 
-API FastAPI para **login/cadastro local e autenticação Google**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). ONG/empresa usa CNPJ numérico ou alfanumérico; pessoa física usa CPF. Aprovação e doações continuam pendentes. Google exige configuração e integração frontend.
+API FastAPI para **login/cadastro local e autenticação Google**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). ONG/empresa usa CNPJ numérico ou alfanumérico; pessoa física usa CPF. Aprovação e doações continuam pendentes. Google já está integrado ao React e exige Client ID e origens autorizadas.
 
 - `POST /api/auth/login` — recebe JSON `{ "email": "...", "senha": "..." }`, devolve token e perfil.
 - `POST /api/auth/cadastro` — cria conta, credencial e perfil `PENDENTE` em transação; retorna `201` com token e usuário. Veja [campos e exemplos](../docs/cadastro_real.md).
@@ -61,6 +61,6 @@ Models: `app/models/entities.py`; schema de cadastro: `app/schemas/cadastro.py`;
 
 ## Segurança / limitações
 
-- Token no `sessionStorage` é uma integração inicial simples; a evolução para produção deve incluir política robusta contra XSS, rate limiting, HTTPS, rotação/revogação de sessões e autenticação Google conforme HU01.
-- Permissões são conferidas pelo backend nos endpoints protegidos (`/me`); **doações, cadastro e recuperação de senha no React continuam mock** e não têm validade operacional nem segurança de servidor.
+- Token no `sessionStorage` é uma integração inicial simples; a evolução para produção deve incluir política robusta contra XSS, rate limiting, HTTPS, rotação/revogação de sessões e aceite do fluxo Google real conforme HU01.
+- Permissões são conferidas pelo backend nos endpoints protegidos (`/me`); **doações e reservas no React continuam mock; recuperação de senha real está indisponível** e não têm validade operacional nem segurança de servidor.
 - Segredos reais ficam apenas no `.env`, nunca no repositório. Evite disponibilizar contas demo publicamente.

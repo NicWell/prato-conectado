@@ -57,7 +57,11 @@ export async function requisicaoApi(path, { method = 'GET', payload, autenticada
   if (payload !== undefined) headers['Content-Type'] = 'application/json';
   if (autenticada) {
     const token = sessionStorage.getItem(TOKEN_KEY);
-    if (!token) throw new ApiError('Entre novamente para continuar.', 401);
+    if (!token) {
+      logoutApi();
+      window.dispatchEvent(new Event('prato:sessao-expirada'));
+      throw new ApiError('Entre novamente para continuar.', 401);
+    }
     headers.Authorization = `Bearer ${token}`;
   }
   let resposta;
@@ -71,7 +75,10 @@ export async function requisicaoApi(path, { method = 'GET', payload, autenticada
     const erro = interpretarErro(resposta.status, corpo);
     // Erro de senha/ID token/desafio Google não significa que o JWT local expirou.
     const falhaGoogleDaTentativa = ['SENHA_INVALIDA', 'DESAFIO_INVALIDO', 'TOKEN_GOOGLE_INVALIDO'].includes(erro.codigo);
-    if (resposta.status === 401 && autenticada && !falhaGoogleDaTentativa) logoutApi();
+    if (resposta.status === 401 && autenticada && !falhaGoogleDaTentativa) {
+      logoutApi();
+      window.dispatchEvent(new Event('prato:sessao-expirada'));
+    }
     throw erro;
   }
   return corpo;
@@ -111,10 +118,15 @@ export async function completarPerfilApi(form) {
   return usuario;
 }
 export async function validarSessaoApi() {
-  if (!sessionStorage.getItem(TOKEN_KEY)) return null;
-  const usuario = await requisicaoApi('/api/auth/me', { autenticada: true });
-  guardarUsuario(usuario);
-  return usuario;
+  if (!sessionStorage.getItem(TOKEN_KEY)) { logoutApi(); return null; }
+  try {
+    const usuario = await requisicaoApi('/api/auth/me', { autenticada: true });
+    guardarUsuario(usuario);
+    return usuario;
+  } catch (erro) {
+    if (erro.status === 401) return null;
+    throw erro;
+  }
 }
 export async function desafioGoogleApi(vincular = false) {
   return requisicaoApi(vincular ? '/api/auth/google/vincular/desafio' : '/api/auth/google/desafio', { method: 'POST', ...(vincular ? { autenticada: true } : {}) });

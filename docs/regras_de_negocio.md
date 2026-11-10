@@ -8,7 +8,7 @@ O que segue combina critérios **expressos no backlog** com **decisões técnica
 - Endereço é separado em logradouro, número, complemento opcional, bairro, cidade, UF e CEP.
 - Conta de acesso é separada do perfil: `usuarios`/`credenciais_locais`, `organizacoes` ou `doadores_pessoa_fisica`.
 - O endpoint público cria conta, credencial e perfil em transação, sempre `PENDENTE` e papel `USUARIO`; duplicidades retornam 409.
-- Login por senha e backend Google estão implementados. Google exige Client ID, desafio de uso único e validação criptográfica do ID token; a integração frontend/aceite de HU01 continua pendente. Vinculação com conta local exige JWT e senha atual; não une contas apenas por e-mail.
+- Login por senha e backend Google estão implementados. Google exige Client ID, desafio de uso único e validação criptográfica do ID token; a integração GIS no React está implementada; o aceite depende da validação real com Google. Vinculação com conta local exige JWT e senha atual; não une contas apenas por e-mail.
 - Validação de CPF/CNPJ é matemática; não consulta situação cadastral. Aprovação continua planejada, sem endpoint nesta etapa.
 
 O [contrato de cadastro](cadastro_real.md) prevalece sobre propostas históricas de campos. Os relacionamentos de doações/termos ainda precisam ser estendidos para PF antes da implementação operacional.

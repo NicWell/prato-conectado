@@ -6,10 +6,10 @@ Monorepositório: `frontend/` (React/Vite), `backend/` (FastAPI), `database/` (P
 
 - Login de **e-mail/senha** via `POST /api/auth/login`, JWT e consulta `/api/auth/me`.
 - PostgreSQL persiste usuários e hashes Argon2id; script incremental ajusta o modelo de login Google documentado.
-- `docker-compose.yml` inicia **db + backend + frontend**; `docker-compose.frontend.yml` mantém o modo mock independente da equipe.
+- `docker-compose.yml` inicia **db + backend + frontend**; `docker-compose.frontend.yml` inicia somente o frontend e aceita modo API ou mock.
 - Cadastro real em `POST /api/auth/cadastro`: ONG e empresa com CNPJ numérico/alfanumérico; doador pessoa física com CPF. Conta, credencial e perfil são criados em transação, sempre `PENDENTE`.
-- Login Google e vinculação explícita estão implementados no backend, com desafio de uso único e conclusão de CPF/CNPJ/endereço autenticada. Exigem `GOOGLE_CLIENT_ID` e integração GIS no frontend: [contrato Google](docs/integracao_google.md).
-- **Aprovação, recuperação de senha e doações NÃO estão implementados no backend.** O cadastro React e Google ainda precisam ser integrados pela equipe de frontend; as demais telas permanecem demonstrativas/locais.
+- Login Google, vinculação explícita e conclusão de perfil estão implementados no backend e integrados ao React/GIS. Configure `GOOGLE_CLIENT_ID`, repassado ao build como `VITE_GOOGLE_CLIENT_ID`: [contrato Google](docs/integracao_google.md).
+- **Aprovação, recuperação de senha e doações NÃO estão implementados no backend.** Cadastro React, primeiro acesso Google, conclusão de perfil e vinculação já usam a API. Doações e reservas permanecem demonstrativas/locais.
 - Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 004](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
 
 ## Iniciar no Windows (PowerShell)
@@ -36,9 +36,11 @@ docker compose ps
 3. Copie o campo `access_token`, pressione **Authorize** no Swagger, informe o token e chame `GET /api/auth/me`.
 4. Entre no frontend com a mesma conta e confira o redirecionamento para a área demonstrativa.
 
-**Importante:** o login do React utiliza a API apenas quando compilado com `VITE_AUTH_MODE=api`; o `docker-compose.yml` já configura isso. Quem executar o `docker-compose.frontend.yml` continua com a simulação antiga, sem backend. Para `npm run dev`, configure `frontend/.env.local` com `VITE_AUTH_MODE=api` e `VITE_API_URL=http://localhost:8000`.
+**Importante:** login e cadastro usam a API quando compilados com `VITE_AUTH_MODE=api`; os dois arquivos Compose configuram API por padrão. O Compose separado inicia somente o frontend e exige backend acessível. Para simular sem backend, defina `VITE_AUTH_MODE=mock` antes de reconstruir o Compose separado. Para `npm run dev`, configure `frontend/.env.local` com `VITE_AUTH_MODE=api`, `VITE_API_URL=http://localhost:8000` e, para Google, `VITE_GOOGLE_CLIENT_ID` igual ao backend.
 
-O botão chamado Google no protótipo era **mock**; no modo API foi reidentificado como acesso demonstrativo de doador. Não use contas demo em produção.
+No modo API, o botão oficial Google usa GIS quando configurado. Atalhos de contas mock ficam disponíveis somente no modo mock. Contas demo do servidor usam login manual com `DEMO_PASSWORD` e dependem do seed habilitado. Não use contas demo em produção.
+
+Sessões expiradas retornam ao login com aviso. Falhas de rede preservam a sessão para nova tentativa. Veja o [roteiro de validação](docs/validacao_autenticacao.md).
 
 ### Parar sem excluir os dados
 
