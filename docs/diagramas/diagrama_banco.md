@@ -1,9 +1,42 @@
 # Diagrama entidade-relacionamento — Prato Conectado
 
-Visualização nativa: no VS Code use **Ctrl+Shift+V**. Os identificadores em maiúsculas representam as tabelas PostgreSQL e as linhas identificam chaves estrangeiras. Consulte `../banco/schema_postgresql.sql` para tipos e restrições exatos.
+Visualização nativa: no VS Code use **Ctrl+Shift+V**. Os identificadores em maiúsculas representam as tabelas PostgreSQL e as linhas identificam chaves estrangeiras. Consulte `../../database/` (baseline + migrations 002/003) para tipos e restrições exatos.
 
 ```mermaid
 erDiagram
+    USUARIOS o|--o{ DESAFIOS_GOOGLE : "usuario_id_vinculacao"
+    DESAFIOS_GOOGLE {
+        uuid id PK
+        varchar nonce_hash UK
+        varchar finalidade
+        uuid usuario_id FK
+        timestamptz expira_em
+        timestamptz consumido_em
+    }
+    USUARIOS ||--o| CREDENCIAIS_LOCAIS : "usuario_id"
+    USUARIOS ||--o| DOADORES_PESSOA_FISICA : "usuario_responsavel_id"
+    CREDENCIAIS_LOCAIS {
+        uuid usuario_id PK,FK
+        varchar senha_hash
+        timestamptz atualizado_em
+    }
+    DOADORES_PESSOA_FISICA {
+        uuid id PK
+        uuid usuario_responsavel_id FK,UK
+        varchar nome
+        varchar cpf UK
+        varchar email_contato
+        varchar telefone
+        varchar logradouro
+        varchar numero
+        varchar complemento
+        varchar bairro
+        varchar cidade
+        varchar uf
+        varchar cep
+        varchar status_verificacao
+        timestamptz criado_em
+    }
     USUARIOS ||--o{ ORGANIZACOES : "usuario_responsavel_id"
     ORGANIZACOES ||--o{ DOCUMENTOS_ORGANIZACAO : "organizacao_id"
     USUARIOS ||--o{ DOCUMENTOS_ORGANIZACAO : "enviado_por_id"

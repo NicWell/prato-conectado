@@ -12,6 +12,7 @@ class Settings:
     seed_demo_users: bool
     demo_password: str
     app_env: str
+    google_client_id: str = ""
 
 
 def get_settings() -> Settings:
@@ -40,8 +41,11 @@ def get_settings() -> Settings:
     seed = os.getenv("SEED_DEMO_USERS", "false").lower() == "true"
     if seed and env != "development":
         raise RuntimeError("SEED_DEMO_USERS só é permitido em desenvolvimento.")
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    if google_client_id and not google_client_id.endswith(".apps.googleusercontent.com"):
+        raise RuntimeError("GOOGLE_CLIENT_ID deve ser o identificador OAuth Web do Google.")
     return Settings(database_url, key, minutes, origins, seed,
-                    os.getenv("DEMO_PASSWORD", ""), env)
+                    os.getenv("DEMO_PASSWORD", ""), env, google_client_id)
 
 
 settings = get_settings()

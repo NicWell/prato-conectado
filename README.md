@@ -2,12 +2,15 @@
 
 Monorepositório: `frontend/` (React/Vite), `backend/` (FastAPI), `database/` (PostgreSQL), `docs/` (modelagem).
 
-## Etapa implementada: login API
+## Etapa implementada: login e cadastro API
 
 - Login de **e-mail/senha** via `POST /api/auth/login`, JWT e consulta `/api/auth/me`.
 - PostgreSQL persiste usuários e hashes Argon2id; script incremental ajusta o modelo de login Google documentado.
 - `docker-compose.yml` inicia **db + backend + frontend**; `docker-compose.frontend.yml` mantém o modo mock independente da equipe.
-- **Google OAuth (HU01), cadastro de ONGs/doadores, aprovação, recuperação de senha e doações NÃO estão implementados no backend.** O restante das telas React permanece demonstrativo/local.
+- Cadastro real em `POST /api/auth/cadastro`: ONG e empresa com CNPJ numérico/alfanumérico; doador pessoa física com CPF. Conta, credencial e perfil são criados em transação, sempre `PENDENTE`.
+- Login Google e vinculação explícita estão implementados no backend, com desafio de uso único e conclusão de CPF/CNPJ/endereço autenticada. Exigem `GOOGLE_CLIENT_ID` e integração GIS no frontend: [contrato Google](docs/integracao_google.md).
+- **Aprovação, recuperação de senha e doações NÃO estão implementados no backend.** O cadastro React e Google ainda precisam ser integrados pela equipe de frontend; as demais telas permanecem demonstrativas/locais.
+- Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 004](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
 
 ## Iniciar no Windows (PowerShell)
 

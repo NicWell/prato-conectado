@@ -5,7 +5,7 @@ Project PratoConectado {
 
 Table usuarios {
   id uuid [pk, default: `gen_random_uuid()`]
-  google_sub varchar(255) [not null, unique]
+  google_sub varchar(255) [unique, note: 'Identidade Google estável; opcional para conta local']
   nome varchar(160) [not null]
   email varchar(255) [not null]
   papel_sistema varchar(20) [not null, default: 'USUARIO']
@@ -18,7 +18,7 @@ Table organizacoes {
   usuario_responsavel_id uuid [not null, ref: > usuarios.id]
   tipo varchar(12) [not null]
   nome varchar(180) [not null]
-  cnpj char(14) [not null, unique]
+  cnpj char(14) [not null, unique, note: '12 caracteres A-Z/0-9 e 2 dígitos após 003']
   email_contato varchar(255) [not null]
   telefone varchar(25) [not null]
   logradouro varchar(180) [not null]
@@ -167,4 +167,46 @@ Table notificacoes {
   mensagem text [not null]
   lida_em timestamptz
   criado_em timestamptz [not null, default: `NOW()`]
+}
+
+// Autenticação/cadastro implementados pelas migrations 002-004; demais domínios são modelagem.
+Table credenciais_locais {
+  usuario_id uuid [pk, ref: > usuarios.id]
+  senha_hash varchar(255) [not null]
+  atualizado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table doadores_pessoa_fisica {
+  id uuid [pk, default: `gen_random_uuid()`]
+  usuario_responsavel_id uuid [not null, unique, ref: > usuarios.id]
+  nome varchar(180) [not null]
+  cpf varchar(11) [not null, unique]
+  email_contato varchar(255) [not null]
+  telefone varchar(25) [not null]
+  logradouro varchar(180) [not null]
+  numero varchar(15) [not null]
+  complemento varchar(120)
+  bairro varchar(100) [not null]
+  cidade varchar(120) [not null]
+  uf varchar(2) [not null]
+  cep varchar(8) [not null]
+  status_verificacao varchar(12) [not null, default: 'PENDENTE']
+  criado_em timestamptz [not null, default: `NOW()`]
+}
+
+Table schema_migrations {
+  versao varchar(80) [pk]
+  aplicada_em timestamptz [not null, default: `NOW()`]
+}
+
+Table desafios_google {
+  id uuid [pk, default: `gen_random_uuid()`]
+  nonce_hash varchar(64) [not null, unique]
+  finalidade varchar(10) [not null, note: 'LOGIN sem usuario_id ou VINCULAR com usuario_id']
+  usuario_id uuid [ref: > usuarios.id]
+  expira_em timestamptz [not null]
+  consumido_em timestamptz
+  indexes {
+    expira_em
+  }
 }
