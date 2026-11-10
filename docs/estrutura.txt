@@ -1,86 +1,45 @@
-prato-conectado/
-│
-├── backend/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   │
-│   │   ├── api/
-│   │   │   ├── routes/
-│   │   │   │   ├── auth.py
-│   │   │   │   ├── usuarios.py
-│   │   │   │   ├── organizacoes.py
-│   │   │   │   ├── doacoes.py
-│   │   │   │   ├── alimentos.py
-│   │   │   │   └── solicitacoes.py
-│   │   │   └── dependencies.py
-│   │   │
-│   │   ├── models/
-│   │   │   ├── usuario.py
-│   │   │   ├── organizacao.py
-│   │   │   ├── doacao.py
-│   │   │   └── alimento.py
-│   │   │
-│   │   ├── schemas/
-│   │   │   ├── usuario.py
-│   │   │   ├── organizacao.py
-│   │   │   └── doacao.py
-│   │   │
-│   │   ├── services/
-│   │   │   ├── auth_service.py
-│   │   │   └── doacao_service.py
-│   │   │
-│   │   ├── core/
-│   │   │   ├── config.py
-│   │   │   └── security.py
-│   │   │
-│   │   └── db/
-│   │       ├── base.py
-│   │       └── session.py
-│   │
-│   ├── alembic/
-│   │   └── versions/
-│   ├── tests/
-│   ├── alembic.ini
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── .dockerignore
-│
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── assets/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── hooks/
-│   │   ├── contexts/
-│   │   ├── routes/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   │
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── Dockerfile
-│   └── .dockerignore
-│
-├── database/
-│   └── schema_postgresql.sql
-│
-├── docs/
-│   ├── diagramas/
-│   │   ├── diagrama_classes.md
-│   │   └── diagrama_banco.md
-│   │
-│   ├── banco/
-│   │   ├── modelo_banco.dbml
-│   │   └── dicionario_dados.md
-│   │
-│   ├── requisitos_e_rastreabilidade.md
-│   ├── regras_de_negocio.md
-│   └── README.md
-│
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
+Estrutura implementada (sem dependências ou artefatos de build)
+
+backend/
+  app/
+    main.py                  FastAPI, CORS, health e erros de validação
+    seed.py                  Contas demonstrativas opcionais
+    api/auth.py              Cadastro, login, /me e schemas de login
+    core/config.py           Variáveis de ambiente
+    core/security.py         Argon2id e JWT
+    core/documentos.py       CPF e CNPJ numérico/alfanumérico
+    db/session.py            Engine e sessões SQLAlchemy
+    models/entities.py       Usuario, CredencialLocal, Organizacao, DoadorPessoaFisica
+    schemas/cadastro.py      Entrada e validações do cadastro
+    services/cadastro.py     Transação de criação da conta e perfil
+  tests/                     Autenticação, cadastro e migrations PostgreSQL
+  requirements.txt
+  requirements-dev.txt
+  Dockerfile
+frontend/                    Sem alterações nesta entrega
+  src/App.jsx                Navegação por hash e estado
+  src/components/            Autenticação, formulários e workspace
+  src/services/              Login API e proposta antiga de cadastro
+  src/mock/store.js          Simulação local
+  src/pages/                 CadastroDoador antigo, fora da navegação atual
+  src/utils/                 Validações e máscaras
+  src/assets/
+  tests/mock.test.mjs
+  Dockerfile
+  nginx.conf
+database/
+  schema_postgresql.sql      Baseline histórico
+  002_credenciais_locais.sql
+  003_cadastro_real.sql
+  README.md                  Ordem, backup e aplicação em volumes existentes
+docs/
+  cadastro_real.md            Contrato atual para integração frontend
+  integracao_login.md
+  requisitos_e_rastreabilidade.md
+  regras_de_negocio.md
+  banco/                     DBML e dicionário
+  diagramas/                 UML/ER conceituais e fluxo de doação proposto
+docker-compose.yml           PostgreSQL + backend + frontend (login API)
+docker-compose.frontend.yml  Frontend demonstrativo independente
+
+Não há Alembic, endpoints operacionais de doações ou integração Google nesta etapa.

@@ -1,8 +1,9 @@
 # Backend de autenticação — Prato Conectado
 
-API FastAPI para **somente login por e-mail e senha**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). Não existem endpoints de cadastro, aprovação de ONGs, doadores ou doações nesta etapa.
+API FastAPI para **login e cadastro por e-mail/senha**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). Cadastro de ONG/empresa usa CNPJ numérico ou alfanumérico; doador pessoa física usa CPF. Aprovação, Google e doações continuam pendentes.
 
 - `POST /api/auth/login` — recebe JSON `{ "email": "...", "senha": "..." }`, devolve token e perfil.
+- `POST /api/auth/cadastro` — cria conta, credencial e perfil `PENDENTE` em transação; retorna `201` com token e usuário. Veja [campos e exemplos](../docs/cadastro_real.md).
 - `GET /api/auth/me` — recebe `Authorization: Bearer <token>`; valida assinatura/expiração e consulta o usuário ativo no banco.
 - `GET /health` — liveness.
 - `GET /health/ready` — verifica conexão com o banco.
@@ -41,7 +42,7 @@ $login = Invoke-RestMethod -Uri http://localhost:8000/api/auth/login -Method Pos
 Invoke-RestMethod -Uri http://localhost:8000/api/auth/me -Headers @{ Authorization = "Bearer $($login.access_token)" }
 ```
 
-**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Para um volume que já exista com `usuarios` mas sem `credenciais_locais`, execute apenas `database/002_credenciais_locais.sql` manualmente antes de iniciar o backend. Não use `docker compose down -v` em ambiente com dados que queira preservar.
+**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Volumes existentes exigem as migrations pendentes (002 e/ou 003) antes de iniciar o backend. Veja [backup e aplicação](../database/README.md). Não remova volumes com dados.
 
 ### Testes automatizados
 
@@ -50,6 +51,10 @@ cd backend
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
+
+Sem configuração adicional, os testes usam SQLite em memória. Para validar o SQL real, defina `TEST_DATABASE_URL` com URL `postgresql+psycopg://...` de um **banco descartável e isolado**. Cada teste cria/remove um schema `teste_<uuid>` próprio e aplica os três scripts. A suíte cobre cadastro, validações, duplicidade, rollback e regressão do login. Testes específicos de migration são pulados em SQLite.
+
+Models: `app/models/entities.py`; schema de cadastro: `app/schemas/cadastro.py`; transação: `app/services/cadastro.py`; rotas: `app/api/auth.py`. Os schemas antigos de login permanecem no módulo de autenticação.
 
 ## Segurança / limitações
 

@@ -1,8 +1,8 @@
 # Dicionário de dados — Prato Conectado
 
-Versão **1.0** — proposta técnica de modelagem para o backlog HU01–HU09.
+Versão **1.1** — esquema após migrations 002 e 003; autenticação/cadastro implementados e demais domínios ainda modelados.
 
-**Convenções:** PK = chave primária; FK = chave estrangeira; UK = único. Todos os UUIDs são gerados no PostgreSQL. `TIMESTAMPTZ` preserva instante com fuso. Emails/CNPJ necessitam validação na camada de serviço.
+**Convenções:** PK = chave primária; FK = chave estrangeira; UK = único. O SQL define UUIDs por `gen_random_uuid()`; o ORM também pode gerar UUIDs em Python. `TIMESTAMPTZ` preserva instante com fuso. E-mails e documentos são validados pela API.
 
 ## usuarios
 
@@ -11,7 +11,7 @@ Pessoas autenticadas por conta Google e administradores da plataforma.
 | Coluna | Tipo PostgreSQL | Regras | Descrição |
 |---|---|---|---|
 | `id` | `UUID` | PK, padrão: `gen_random_uuid()` | Identificador do usuário. |
-| `google_sub` | `VARCHAR(255)` | UK, obrigatório | Identificador imutável da conta Google. |
+| `google_sub` | `VARCHAR(255)` | UK, opcional após 002 | Identificador da conta Google; integração pendente. |
 | `nome` | `VARCHAR(160)` | obrigatório | Nome apresentado na plataforma. |
 | `email` | `VARCHAR(255)` | obrigatório | Endereço de e-mail obtido da autenticação Google. |
 | `papel_sistema` | `VARCHAR(20)` | obrigatório, padrão: `'USUARIO'`, CHECK | USUARIO ou ADMINISTRADOR. |
@@ -28,7 +28,7 @@ Cadastro comum a doadores e ONGs, com aprovação administrativa.
 | `usuario_responsavel_id` | `UUID` | FK → `usuarios.id`, obrigatório | Pessoa que cadastrou e representa a organização. |
 | `tipo` | `VARCHAR(12)` | obrigatório, CHECK | DOADOR ou ONG. |
 | `nome` | `VARCHAR(180)` | obrigatório | Razão social ou nome da instituição. |
-| `cnpj` | `CHAR(14)` | UK, obrigatório, CHECK | CNPJ normalizado, sem pontuação. |
+| `cnpj` | `CHAR(14)` | UK, obrigatório, CHECK | 12 caracteres A–Z/0–9 e dois dígitos, sem pontuação (003). |
 | `email_contato` | `VARCHAR(255)` | obrigatório | E-mail institucional para contato. |
 | `telefone` | `VARCHAR(25)` | obrigatório | Telefone de contato. |
 | `logradouro` | `VARCHAR(180)` | obrigatório | Endereço: rua/avenida. |
@@ -243,5 +243,28 @@ Comunicados internos de aprovação, reprovação e outros eventos.
 O SQL traz índices para status e janela da doação, categoria/validade do item, necessidades, solicitações e notificações. Índices únicos parciais protegem contra duas reservas aceitas para a mesma doação e solicitações ativas duplicadas da mesma ONG.
 
 ## Nota de implementação
+
+### credenciais_locais (002)
+
+`usuario_id UUID` é PK/FK para `usuarios`, com `ON DELETE CASCADE`. `senha_hash VARCHAR(255)` é obrigatório e guarda Argon2id. `atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()` fica sob responsabilidade da aplicação; não existe trigger de atualização.
+
+### doadores_pessoa_fisica (003)
+
+| Coluna | Tipo / regra |
+|---|---|
+| `id` | UUID PK, padrão `gen_random_uuid()` |
+| `usuario_responsavel_id` | UUID obrigatório, único, FK `usuarios.id` |
+| `nome` | VARCHAR(180), obrigatório |
+| `cpf` | VARCHAR(11), obrigatório, único, CHECK 11 dígitos |
+| `email_contato`, `telefone` | VARCHAR(255)/VARCHAR(25), obrigatórios |
+| `logradouro`, `numero` | VARCHAR(180)/VARCHAR(15), obrigatórios |
+| `complemento` | VARCHAR(120), opcional |
+| `bairro`, `cidade`, `uf`, `cep` | VARCHAR(100)/VARCHAR(120)/VARCHAR(2)/VARCHAR(8), obrigatórios; CEP com CHECK 8 dígitos |
+| `status_verificacao` | VARCHAR(12), obrigatório, padrão PENDENTE; CHECK PENDENTE/APROVADA/REPROVADA |
+| `criado_em` | TIMESTAMPTZ obrigatório, padrão NOW() |
+
+`schema_migrations` é tabela técnica: `versao VARCHAR(80) PRIMARY KEY` e `aplicada_em TIMESTAMPTZ NOT NULL DEFAULT NOW()`, com rastreio a partir de 003; sem presumir histórico das migrations legadas.
+
+O ORM representa somente Usuario, CredencialLocal, Organizacao e DoadorPessoaFisica. Não confundir tabela criada com funcionalidade implementada.
 
 Regras de negócio que envolvem horário corrente, situação de aprovação e validações entre registros não são totalmente expressáveis por `CHECK` simples. Devem ser implementadas no backend Python e testadas em transações PostgreSQL.

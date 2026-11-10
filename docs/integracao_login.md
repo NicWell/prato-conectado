@@ -1,6 +1,6 @@
 # Contrato de autenticação — Integração React / FastAPI
 
-**Etapa atual:** somente login por e-mail/senha com JWT, persistido no PostgreSQL. Login Google (HU01), cadastro de ONGs e doadores (HU02/HU04), recuperação de senha e doações ainda não fazem parte do backend.
+**Etapa atual:** login e cadastro por e-mail/senha com JWT, persistidos no PostgreSQL. O [contrato de cadastro](cadastro_real.md) cobre ONG, empresa e pessoa física. Google, aprovação, recuperação de senha e doações continuam pendentes. O frontend ainda integra somente o login.
 
 ## Endpoints
 
@@ -66,15 +66,21 @@ O botão original "Entrar com Google (mock)" é identificado como acesso a doado
 
 ## SQL e Docker
 
-Na primeira criação do banco, o container `db` executa primeiro `database/schema_postgresql.sql` e em seguida `database/002_credenciais_locais.sql`. O segundo script torna `google_sub` opcional e cria `credenciais_locais` com o hash da senha. No login nunca há inserção de novas contas; o comando de inicialização do backend só cria **duas contas fictícias de teste** se `SEED_DEMO_USERS=true` e `APP_ENV=development`.
+Na primeira criação do banco, o container `db` executa `database/schema_postgresql.sql`, `database/002_credenciais_locais.sql` e `database/003_cadastro_real.sql`, nessa ordem. O segundo script torna `google_sub` opcional e cria as credenciais locais; o terceiro habilita CNPJ alfanumérico e perfis PF. O login não insere contas: elas são criadas pelo cadastro ou pelo seed opcional de desenvolvimento.
 
-Em bancos já existentes (volume do Docker já inicializado), aplique `database/002_credenciais_locais.sql` **manualmente**, após fazer backup, pois os scripts de inicialização do PostgreSQL não rodam novamente em volumes com dados.
+Em bancos existentes, aplique somente as migrations pendentes, após backup, conforme [database/README.md](../database/README.md). Os scripts de inicialização não rodam novamente em volumes com dados.
 
 Para consultar o banco no VS Code usando SQLTools, configure host `localhost`, porta `5432` (ou `POSTGRES_PORT`), nome/usuário/senha do seu `.env`.
+
+## Cadastro e migração
+
+`POST /api/auth/cadastro` retorna `201` no mesmo formato do login. `perfil` também pode ser `PESSOA_FISICA`; nesse caso, `id` identifica o perfil em `doadores_pessoa_fisica`. O contrato antigo de login para organizações é preservado. Para proteger senhas/documentos, respostas `422` omitem o payload recebido e mantêm apenas `loc`, `msg` e `type` por erro.
+
+O Compose aplica também `003_cadastro_real.sql` em volumes novos. Em volumes existentes, aplique as migrations pendentes conforme [database/README.md](../database/README.md). A integração React do novo endpoint continua pendente.
 
 ## Próximas entregas
 
 - HU01: login Google real — fluxo OAuth ou Google Identity Services com verificação do token Google no backend.
-- HU02/HU04: cadastro doador e ONG, sempre `PENDENTE` e com validações CNPJ/documentos.
+- HU02/HU04: integrar o cadastro real no React e completar o fluxo documental de aprovação; o endpoint de cadastro já está implementado.
 - HU05: aprovação administrativa, trilha de auditoria e autorização por organização.
 - Segurança pré-produção: TLS/HTTPS, rate limiting por IP e conta, proteção contra XSS, gestão/revogação de sessão e política de segredos.

@@ -5,6 +5,19 @@ Use **Ctrl+Shift+V** no VS Code. Este é um modelo **conceitual do domínio Pyth
 ```mermaid
 classDiagram
     direction LR
+    class CredencialLocal {
+      +UUID usuarioId
+      +string senhaHash
+    }
+    class DoadorPessoaFisica {
+      +UUID id
+      +string cpf
+      +string nome
+      +string statusVerificacao
+    }
+    Usuario "1" --> "0..1" CredencialLocal : credencial
+    Usuario "1" --> "0..1" DoadorPessoaFisica : representa
+
 
     class Usuario {
       +UUID id

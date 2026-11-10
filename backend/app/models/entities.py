@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Uuid, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -18,6 +18,7 @@ class Usuario(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     credencial: Mapped["CredencialLocal | None"] = relationship(back_populates="usuario", uselist=False)
+    __table_args__ = (Index("uq_usuarios_email_ci", func.lower(email), unique=True),)
 
 
 class CredencialLocal(Base):
@@ -45,5 +46,27 @@ class Organizacao(Base):
     uf: Mapped[str] = mapped_column(String(2), nullable=False)
     cep: Mapped[str] = mapped_column(String(8), nullable=False)
     capacidade_atendimento: Mapped[int | None] = mapped_column(Integer)
+    status_verificacao: Mapped[str] = mapped_column(String(12), nullable=False, default="PENDENTE")
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DoadorPessoaFisica(Base):
+    __tablename__ = "doadores_pessoa_fisica"
+    __table_args__ = (
+        CheckConstraint("status_verificacao IN ('PENDENTE', 'APROVADA', 'REPROVADA')", name="chk_doador_pf_status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    usuario_responsavel_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("usuarios.id"), nullable=False, unique=True)
+    nome: Mapped[str] = mapped_column(String(180), nullable=False)
+    cpf: Mapped[str] = mapped_column(String(11), nullable=False, unique=True)
+    email_contato: Mapped[str] = mapped_column(String(255), nullable=False)
+    telefone: Mapped[str] = mapped_column(String(25), nullable=False)
+    logradouro: Mapped[str] = mapped_column(String(180), nullable=False)
+    numero: Mapped[str] = mapped_column(String(15), nullable=False)
+    complemento: Mapped[str | None] = mapped_column(String(120))
+    bairro: Mapped[str] = mapped_column(String(100), nullable=False)
+    cidade: Mapped[str] = mapped_column(String(120), nullable=False)
+    uf: Mapped[str] = mapped_column(String(2), nullable=False)
+    cep: Mapped[str] = mapped_column(String(8), nullable=False)
     status_verificacao: Mapped[str] = mapped_column(String(12), nullable=False, default="PENDENTE")
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

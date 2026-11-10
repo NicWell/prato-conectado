@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import issue_access_token, read_access_token, verify_password
 from app.db.session import get_db
-from app.models import CredencialLocal, Organizacao, Usuario
+from app.models import CredencialLocal, DoadorPessoaFisica, Organizacao, Usuario
+from app.schemas.cadastro import CadastroPayload
+from app.services.cadastro import CadastroDuplicado, cadastrar_conta
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticação"])
 bearer = HTTPBearer(auto_error=False)
@@ -19,7 +21,7 @@ class LoginPayload(BaseModel):
 
 
 class UsuarioPublico(BaseModel):
-    id: str  # id da organização quando existente (compatibilidade com a interface mock)
+    id: str  # id do perfil (organização ou doador PF); sem perfil, id da conta
     usuario_id: str
     nome: str
     email: EmailStr
@@ -42,16 +44,38 @@ def get_user_view(db: Session, usuario: Usuario) -> UsuarioPublico:
     org = db.scalar(select(Organizacao).where(
         Organizacao.usuario_responsavel_id == usuario.id
     ).order_by(Organizacao.criado_em, Organizacao.id).limit(1))
+    pessoa = None if org else db.scalar(select(DoadorPessoaFisica).where(
+        DoadorPessoaFisica.usuario_responsavel_id == usuario.id
+    ))
+    cadastro = org or pessoa
+    tipo = org.tipo if org else "DOADOR" if pessoa else "SEM_ORGANIZACAO"
+    if org:
+        perfil = "ONG" if org.tipo == "ONG" else "EMPRESA"
+    else:
+        perfil = "PESSOA_FISICA" if pessoa else "SEM_ORGANIZACAO"
     return UsuarioPublico(
-        id=str(org.id if org else usuario.id),
+        id=str(cadastro.id if cadastro else usuario.id),
         usuario_id=str(usuario.id),
-        nome=org.nome if org else usuario.nome,
+        nome=cadastro.nome if cadastro else usuario.nome,
         email=usuario.email,
         responsavel=usuario.nome,
-        tipo=org.tipo if org else "SEM_ORGANIZACAO",
-        perfil="ONG" if org and org.tipo == "ONG" else "EMPRESA" if org else "SEM_ORGANIZACAO",
-        status=org.status_verificacao if org else "PENDENTE",
+        tipo=tipo,
+        perfil=perfil,
+        status=cadastro.status_verificacao if cadastro else "PENDENTE",
         papel_sistema=usuario.papel_sistema,
+    )
+
+
+@router.post("/cadastro", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+def cadastrar(payload: CadastroPayload, db: Session = Depends(get_db)):
+    try:
+        usuario = cadastrar_conta(db, payload)
+    except CadastroDuplicado as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
+    return LoginResponse(
+        access_token=issue_access_token(usuario.id),
+        expires_in=settings.jwt_exp_minutes * 60,
+        usuario=get_user_view(db, usuario),
     )
 
 

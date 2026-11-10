@@ -1,6 +1,8 @@
-# Prato Conectado — Documentação e diagramas (v1.0)
+# Prato Conectado — Documentação e diagramas (v1.1)
 
-Esta entrega contém **somente documentação e modelagem**, sem aplicação Python, frontend React ou arquivos Docker. A documentação consolida os documentos de descoberta com o backlog **“Gestão de Projeto - Acompanhamento de Histórias e Aceite.xlsx”** (HU01–HU09, sprints 1–5).
+O repositório contém backend FastAPI, frontend React, PostgreSQL e Docker Compose. Login e cadastro por e-mail/senha estão implementados no backend; o frontend integra somente o login. A modelagem de doações e aprovação continua sendo proposta de evolução. A planilha histórica “Gestão de Projeto - Acompanhamento de Histórias e Aceite.xlsx” não está no repositório; os registros de aceite não foram revalidados.
+
+Contrato atual: [cadastro real](cadastro_real.md), [login](integracao_login.md), [migrations](../database/README.md). Os READMEs antigos dentro de `frontend/` descrevem o protótipo; para o estado da integração backend, use estes contratos e o README raiz.
 
 ## Acesso rápido
 
@@ -9,7 +11,7 @@ Esta entrega contém **somente documentação e modelagem**, sem aplicação Pyt
 | [`diagramas/diagrama_classes.md`](diagramas/diagrama_classes.md) | Diagrama UML conceitual editável no VS Code |
 | [`diagramas/diagrama_banco.md`](diagramas/diagrama_banco.md) | Diagrama entidade-relacionamento (Mermaid) |
 | [`banco/modelo_banco.dbml`](banco/modelo_banco.dbml) | Modelo relacional DBML editável / importável |
-| [`banco/schema_postgresql.sql`](banco/schema_postgresql.sql) | DDL SQL inicial PostgreSQL 13+ |
+| [`../database/schema_postgresql.sql`](../database/schema_postgresql.sql) | Baseline histórico; aplicar também migrations 002 e 003 |
 | [`banco/dicionario_dados.md`](banco/dicionario_dados.md) | Tabelas, colunas e tipos exatos |
 | [`requisitos_e_rastreabilidade.md`](requisitos_e_rastreabilidade.md) | Vinculação de cada HU com tabelas e critérios de aceite |
 | [`regras_de_negocio.md`](regras_de_negocio.md) | Validações de domínio e questões pendentes |
@@ -29,19 +31,21 @@ Crie uma base de dados vazia chamada `prato_conectado`, conecte um usuário com 
 
 ```bash
 createdb -U postgres prato_conectado
-psql -U postgres -d prato_conectado -f banco/schema_postgresql.sql
+psql -U postgres -d prato_conectado -f database/schema_postgresql.sql
+psql -U postgres -d prato_conectado -f database/002_credenciais_locais.sql
+psql -U postgres -d prato_conectado -f database/003_cadastro_real.sql
 ```
 
-No Windows, execute os comandos no terminal em que PostgreSQL (`createdb` / `psql`) esteja no `PATH`, ou abra `banco/schema_postgresql.sql` num cliente SQL do VS Code conectado ao PostgreSQL e execute o script. **Não é necessário criar o banco para visualizar os diagramas.**
+Execute esses comandos na raiz e somente em banco vazio. Para banco existente, siga [migrations e backup](../database/README.md). Não é necessário criar banco para visualizar diagramas.
 
 Este DDL cria tabelas, chaves, índices e verificações locais. **Não implementa lógica de aplicação** (OAuth Google, agendamento da expiração, aprovação automática, aceitação de termo ou regras de validação entre tabelas). O SQL usa `gen_random_uuid()`, disponível diretamente no PostgreSQL 13 ou superior, sem exigir a criação de extensão.
 
 ## Escopo arquitetural
 
-- Backend futuro: Python / FastAPI com SQLAlchemy + Alembic.
+- Backend atual: Python / FastAPI com SQLAlchemy; migrations SQL numeradas, sem Alembic.
 - Banco: PostgreSQL.
-- Frontend futuro: React.
-- Infraestrutura futura: Docker.
+- Frontend atual: React/Vite; autenticação API e fluxos demonstrativos locais.
+- Infraestrutura atual: Docker Compose, PostgreSQL, Uvicorn e Nginx.
 - Entidades fundamentais: usuário, organização (doador/ONG), voluntário, documento, análise, categoria, necessidade da ONG, termo, aceite, doação, item, triagem, solicitação, histórico e notificação.
 
 **Observação de modelagem:** a estrutura atende o backlog como **proposta inicial**, não como esquema já aprovado para produção. As decisões conflitantes entre briefing e backlog estão documentadas em `regras_de_negocio.md`.
