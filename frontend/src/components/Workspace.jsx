@@ -154,13 +154,13 @@ function ReservasOng({ usuario, doacoes, atualizar, navigate }) {
     </CartaoDoacao>)}</div> : <div className="empty-state"><h3>Você ainda não reservou doações</h3><p>Acesse as oportunidades e escolha uma oferta disponível.</p><button className="btn btn--red" onClick={() => navigate('/app/oportunidades')}>Ver oportunidades</button></div>}
   </>;
 }
-export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, publicar, atualizar }) {
+export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, publicar, atualizar, vincularGoogle }) {
   const ong = usuario.tipo === 'ONG';
   const links = ong ? [['/app/inicio', 'Início'], ['/app/oportunidades', 'Doações disponíveis'], ['/app/reservas', 'Minhas reservas']] : [['/app/inicio', 'Início'], ['/app/doacoes', 'Minhas doações'], ['/app/nova-doacao', 'Nova doação']];
   return <div className={`workspace theme-${tema}`}>
     <aside className="sidebar"><div className="sidebar__logo"><Logo /></div>
       <nav className="sidebar-nav" aria-label="Menu principal">{links.map(([path, label]) => <button key={path} type="button" className={`sidebar-link ${rota === path ? 'sidebar-link--active' : ''}`} onClick={() => navegar(path)}>{label}</button>)}</nav>
-      <div className="sidebar-bottom"><span className="sidebar-profile">{ong ? 'ONG' : 'DOADOR'} · {usuario.nome}</span><button type="button" onClick={sair} className="sidebar-logout">Sair ({ong ? 'ONG' : 'Doador'})</button></div>
+      <div className="sidebar-bottom">{vincularGoogle && <button type="button" className="sidebar-logout" onClick={vincularGoogle}>Vincular Google</button>}<span className="sidebar-profile">{ong ? 'ONG' : 'DOADOR'} · {usuario.nome}</span><button type="button" onClick={sair} className="sidebar-logout">Sair ({ong ? 'ONG' : 'Doador'})</button></div>
     </aside>
     <main className="workspace-main"><button type="button" className="theme-switch workspace-theme-switch" onClick={alternarTema}>Modo {tema === 'dark' ? 'claro' : 'escuro'}</button>
       <div className="workspace-body">

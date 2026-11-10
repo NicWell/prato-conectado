@@ -60,7 +60,7 @@ export async function registrar(info) {
   const db = banco();
   const email = info.email.trim().toLowerCase();
   if (db.usuarios.some(u => u.email === email)) throw new Error('Este e-mail já está cadastrado.');
-  if (db.usuarios.some(u => !u.demo && u.cpf === info.cpf.replace(/\D/g, ''))) throw new Error('Este CPF já está cadastrado.');
+  if (info.cpf && db.usuarios.some(u => !u.demo && u.cpf === info.cpf.replace(/\D/g, ''))) throw new Error('Este CPF já está cadastrado.');
   if (info.cnpj && db.usuarios.some(u => !u.demo && u.cnpj === info.cnpj.replace(/[^A-Z0-9]/gi, ''))) throw new Error('Este CNPJ já está cadastrado.');
   const novo = await prepararConta({
     tipo: info.tipo, perfil: info.tipo === 'ONG' ? 'ONG' : info.perfil, nome: info.nome.trim(),

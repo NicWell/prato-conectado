@@ -1,3 +1,5 @@
+> **Atualização (integração de autenticação):** login e cadastro de ONG, empresa e pessoa física agora podem usar o backend real, além de Google Identity Services quando configurado. Veja **[INTEGRACAO_AUTH_FRONTEND.md](INTEGRACAO_AUTH_FRONTEND.md)** para configurar e testar. Doações e reservas permanecem mock.
+
 # Prato Conectado — Frontend da Sprint (mock + Docker)
 
 Aplicação React + Vite baseada no protótipo recebido. Contém **login, criação de usuários (doador empresa, doador pessoa física e ONG), aprovação pendente, painel do doador, criação e gestão de doações, oportunidades e reservas da ONG, recuperação de senha simulada, alternância entre modo escuro e claro**.
