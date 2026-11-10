@@ -27,14 +27,18 @@ falha e reverte integralmente; a equipe precisa resolver essa situação antes d
 
 ## Criar a conta da equipe
 
-Após aplicar 005 e construir o backend:
+Preencha `ADMIN_NAME`, `ADMIN_EMAIL` e `ADMIN_PASSWORD` no `.env` da raiz.
+Com `docker compose up --build -d`, o backend cria a conta ao iniciar, após o
+PostgreSQL estar pronto. A senha deve ter de 8 a 256 caracteres. Se já existir
+um administrador, suas credenciais são preservadas em reinícios.
+
+Com os três campos vazios, a criação pode ser feita pelo comando interativo:
 
 ```powershell
 docker compose exec backend python -m app.criar_admin
 ```
 
-O comando solicita nome, e-mail e senha com confirmação oculta. Não há senha padrão,
-variáveis com senha administrativa ou seed automático. Exige senha de 8 a 256 caracteres.
+O comando solicita nome, e-mail e senha com confirmação oculta.
 Recusa outra conta administrativa ou e-mail existente, sem promover uma conta pública,
 alterar credenciais ou criar perfil de participante. Não existe endpoint público de
 criação/promoção administrativa. Guarde as credenciais no meio privado adotado pela equipe.

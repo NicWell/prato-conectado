@@ -8,6 +8,7 @@ from app.api.auth import router as auth_router
 from app.api.google import router as google_router
 from app.api.admin import router as admin_router
 from app.core.config import settings
+from app.criar_admin import provisionar_administrador
 from app.db.session import SessionLocal
 from app.seed import seed_demo_accounts
 
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
     # As tabelas são criadas pelo script SQL do PostgreSQL; a aplicação NÃO chama create_all.
     with SessionLocal() as db:
         db.execute(text("SELECT 1"))
+        provisionar_administrador(db)
         seed_demo_accounts(db)
     yield
 

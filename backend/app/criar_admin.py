@@ -1,5 +1,6 @@
 """Provisionamento interno: python -m app.criar_admin (nunca via HTTP)."""
 from getpass import getpass
+import os
 
 from pydantic import BaseModel, EmailStr, Field, ValidationError
 from sqlalchemy import select
@@ -8,6 +9,10 @@ from sqlalchemy.exc import IntegrityError
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.models import CredencialLocal, Usuario
+
+
+class AdministradorExistente(ValueError):
+    pass
 
 
 class DadosAdministrador(BaseModel):
@@ -20,7 +25,7 @@ def criar_administrador(db, dados):
     """Cria conta exclusiva, sem promover contas públicas nem alterar senhas."""
     try:
         if db.scalar(select(Usuario.id).where(Usuario.papel_sistema == "ADMINISTRADOR")):
-            raise ValueError("A conta administrativa já existe. Nenhuma alteração realizada.")
+            raise AdministradorExistente("A conta administrativa já existe. Nenhuma alteração realizada.")
         usuario = Usuario(nome=dados.nome, email=str(dados.email).lower(), papel_sistema="ADMINISTRADOR", ativo=True)
         db.add(usuario)
         db.flush()
@@ -30,6 +35,26 @@ def criar_administrador(db, dados):
     except Exception:
         db.rollback()
         raise
+
+
+def provisionar_administrador(db):
+    nome = os.getenv("ADMIN_NAME", "").strip()
+    email = os.getenv("ADMIN_EMAIL", "").strip()
+    senha = os.getenv("ADMIN_PASSWORD", "")
+    if not any((nome, email, senha)):
+        return
+    try:
+        dados = DadosAdministrador(nome=nome, email=email, senha=senha)
+    except ValidationError:
+        raise RuntimeError("Configure ADMIN_NAME, ADMIN_EMAIL e ADMIN_PASSWORD válidos.") from None
+    try:
+        criar_administrador(db, dados)
+    except AdministradorExistente:
+        return
+    except IntegrityError:
+        if db.scalar(select(Usuario.id).where(Usuario.papel_sistema == "ADMINISTRADOR")):
+            return
+        raise RuntimeError("Não foi possível criar o administrador. Verifique se o e-mail já está em uso.") from None
 
 
 def main():
