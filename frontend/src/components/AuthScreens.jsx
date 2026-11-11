@@ -144,6 +144,7 @@ export function RejectedScreen({ usuario, theme, toggleTheme, onLogout, onRefres
   return <AuthShell theme={theme} toggleTheme={toggleTheme} tipo="REGISTER">
     <p className="eyebrow">ANÁLISE DO CADASTRO</p><h2 className="auth-title">Cadastro não aprovado</h2>
     <p className="auth-subtitle">O cadastro de <strong>{usuario.nome}</strong> foi reprovado. Procure a equipe responsável para mais informações.</p>
+    {usuario.motivo_reprovacao && <p className="alert alert--error"><strong>Justificativa:</strong> {usuario.motivo_reprovacao}</p>}
     <div className="pending-status"><span>Status do cadastro</span><strong>Reprovado</strong></div>
     {erro && <p className="alert alert--error" role="alert">{erro}</p>}
     <button type="button" className="btn btn--yellow btn--wide" onClick={atualizar} disabled={loading}>{loading ? 'Consultando...' : 'Consultar situação'}</button>

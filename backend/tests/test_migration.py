@@ -39,6 +39,14 @@ def test_003_preserva_dados_anteriores():
             conn.commit()
             conn.connection.driver_connection.execute((scripts / "004_google.sql").read_text(encoding="utf-8"))
             conn.commit()
+            conn.exec_driver_sql("""INSERT INTO analises_cadastro (organizacao_id, administrador_id, decisao)
+                SELECT id, usuario_responsavel_id, 'APROVADA' FROM organizacoes""")
+            historico_antes = conn.exec_driver_sql("SELECT id, organizacao_id, administrador_id, decisao, analisado_em FROM analises_cadastro").all()
+            conn.commit()
+            for _ in range(2):
+                conn.connection.driver_connection.execute((scripts / "005_painel_administrativo.sql").read_text(encoding="utf-8"))
+                conn.commit()
+            assert conn.exec_driver_sql("SELECT id, organizacao_id, administrador_id, decisao, analisado_em FROM analises_cadastro").all() == historico_antes
             assert conn.exec_driver_sql("SELECT * FROM organizacoes").all() == antes
             assert conn.exec_driver_sql("SELECT nome FROM usuarios").scalar_one() == "Legado"
     finally:

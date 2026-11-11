@@ -2,16 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { acessarDemo, autenticar, encerrarSessao, iniciarMock, listarDoacoes, mudarStatusDoacao, novaDoacao, redefinirSenha, registrar, restaurarMock, usuarioAtual } from './mock/store.js';
 import { CompleteProfileScreen, DemoScreen, GoogleLinkScreen, LoginScreen, PendingScreen, RegisterScreen, RejectedScreen, ResetScreen } from './components/AuthScreens.jsx';
 import Workspace from './components/Workspace.jsx';
+import AdminPanel from './components/AdminPanel.jsx';
+import { destino, perfilIncompleto } from './utils/sessao.js';
 import { USAR_API_AUTH, cadastrarApi, completarPerfilApi, loginApi, loginGoogleApi, logoutApi, usuarioSessaoApi, validarSessaoApi, vincularGoogleApi } from './services/auth.js';
 
 function lerRota() { return window.location.hash.slice(1) || '/entrar'; }
-function perfilIncompleto(usuario) { return usuario?.cadastro_completo === false || usuario?.tipo === 'SEM_ORGANIZACAO'; }
-function destino(usuario) {
-  if (perfilIncompleto(usuario)) return '/concluir-cadastro';
-  if (usuario?.status === 'PENDENTE') return '/pendente';
-  if (usuario?.status === 'REPROVADA' || usuario?.status === 'REPROVADO') return '/reprovado';
-  return '/app/inicio';
-}
 export default function App() {
   const [rota, setRota] = useState(lerRota);
   const [tema, setTema] = useState(() => localStorage.getItem('prato_tema') || 'dark');
@@ -56,6 +51,9 @@ export default function App() {
     return () => { ativo = false; window.removeEventListener('hashchange', onHash); window.removeEventListener('prato:sessao-alterada', atualizarDados); window.removeEventListener('prato:sessao-expirada', onSessaoExpirada); };
   }, [atualizarDados, navegar]);
   useEffect(() => { localStorage.setItem('prato_tema', tema); }, [tema]);
+  useEffect(() => {
+    if (USAR_API_AUTH && usuario?.papel_sistema === 'ADMINISTRADOR' && rota !== '/admin/cadastros') window.location.hash = '/admin/cadastros';
+  }, [usuario, rota]);
   const alternarTema = () => setTema(t => t === 'dark' ? 'light' : 'dark');
   const entrar = async (email, senha) => {
     const u = USAR_API_AUTH ? await loginApi(email, senha) : await autenticar(email, senha);
@@ -104,7 +102,9 @@ export default function App() {
   if (!pronto) return <div className="loading-screen" role="status">Carregando Prato Conectado...</div>;
   if (fatal) return <div className="loading-screen"><h1>Não foi possível consultar a sessão</h1><p>{fatal}</p><button className="btn btn--red" onClick={() => window.location.reload()}>Tentar novamente</button></div>;
   let tela;
-  if (rota === '/sair') { // O botão de conclusão posterior usa navegação declarativa.
+  if (USAR_API_AUTH && usuario?.papel_sistema === 'ADMINISTRADOR') {
+    tela = <AdminPanel usuario={usuario} tema={tema} alternarTema={alternarTema} sair={sair} />;
+  } else if (rota === '/sair') { // O botão de conclusão posterior usa navegação declarativa.
     tela = <AuthShellLogout onLogout={sair} />;
   } else if (usuario && rota === '/vincular-google' && USAR_API_AUTH) {
     tela = <GoogleLinkScreen usuario={usuario} theme={tema} toggleTheme={alternarTema} navigate={navegar} onVincular={vincular} />;

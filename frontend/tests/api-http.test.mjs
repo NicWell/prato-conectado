@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cadastrarApi, completarPerfilApi, loginApi, loginGoogleApi, logoutApi, requisicaoApi, usuarioSessaoApi, validarSessaoApi, vincularGoogleApi } from '../src/services/auth.js';
+import { decidirCadastro, detalharCadastro, listarCadastros } from '../src/services/admin.js';
+import { destino } from '../src/utils/sessao.js';
 
 class MemoryStorage {
   map = new Map();
@@ -18,6 +20,35 @@ function instalarFetch(retorno) {
   return chamadas;
 }
 function json(data,status=200) { return { ok: status>=200 && status<300, status, json: async()=>data }; }
+
+test('administrador sem perfil vai ao painel e participantes mantêm seus destinos', () => {
+  assert.equal(destino({ papel_sistema: 'ADMINISTRADOR', cadastro_completo: false, tipo: 'SEM_ORGANIZACAO', status: 'PENDENTE' }), '/admin/cadastros');
+  assert.equal(destino({ cadastro_completo: false }), '/concluir-cadastro');
+  for (const [status, rota] of [['PENDENTE', '/pendente'], ['REPROVADA', '/reprovado'], ['APROVADA', '/app/inicio']]) {
+    assert.equal(destino({ ...usuario, status }), rota);
+  }
+});
+
+test('painel envia filtros e decisão pelo JWT da aplicação e preserva sessão em 403/409', async () => {
+  sessionStorage.setItem('prato_conectado_api_access_token', 'jwt-admin');
+  const chamadas = instalarFetch(() => json({ itens: [], total: 0 }));
+  await listarCadastros({ perfil: 'PESSOA_FISICA', status: 'REPROVADA', busca: 'João & Maria', pagina: 2 });
+  const params = new URL(chamadas[0].url).searchParams;
+  assert.equal(params.get('busca'), 'João & Maria');
+  assert.equal(params.get('pagina'), '2');
+  assert.equal(params.get('perfil'), 'PESSOA_FISICA');
+  await detalharCadastro('PESSOA_FISICA', 'perfil-id');
+  await decidirCadastro('PESSOA_FISICA', 'perfil-id', 'REPROVADA', ' Dados incompletos ');
+  assert.ok(chamadas[1].url.endsWith('/api/admin/cadastros/PESSOA_FISICA/perfil-id'));
+  assert.deepEqual(JSON.parse(chamadas[2].opcoes.body), { decisao: 'REPROVADA', justificativa: 'Dados incompletos' });
+  assert.equal(chamadas[2].opcoes.method, 'POST');
+  for (const chamada of chamadas) assert.equal(chamada.opcoes.headers.Authorization, 'Bearer jwt-admin');
+  for (const status of [403, 409]) {
+    instalarFetch(() => json({ detail: 'Operação recusada' }, status));
+    await assert.rejects(() => decidirCadastro('ONG', 'perfil-id', 'APROVADA', ''), e => e.status === status);
+    assert.equal(sessionStorage.getItem('prato_conectado_api_access_token'), 'jwt-admin');
+  }
+});
 
 test('login e /me enviam Bearer do JWT da aplicação', async () => {
   logoutApi();

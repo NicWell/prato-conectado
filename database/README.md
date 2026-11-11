@@ -6,12 +6,13 @@ A aplicação não executa `create_all()` em produção. Ordem de aplicação:
 2. `002_credenciais_locais.sql`: credenciais locais e `google_sub` opcional.
 3. `003_cadastro_real.sql`: CNPJ alfanumérico e perfil de doador pessoa física.
 4. `004_google.sql`: desafios Google de uso único, com validade de cinco minutos.
+5. `005_painel_administrativo.sql`: histórico para doador PF e conta administrativa única. Veja [preparação e provisionamento](../docs/painel_administrativo.md).
 
-Resultado: 17 tabelas de domínio, `desafios_google` e `schema_migrations` (19 no total). As migrations 003/004 são transacionais, registram suas versões e permitem reexecução. Os scripts anteriores são legados, sem esse controle. Não reaplicar o baseline em banco existente nem editar scripts históricos para atualizar volumes.
+Resultado: 17 tabelas de domínio, `desafios_google` e `schema_migrations` (19 no total). As migrations 003/004/005 são transacionais, registram suas versões e permitem reexecução. Os scripts anteriores são legados, sem esse controle. Não reaplicar o baseline em banco existente nem editar scripts históricos para atualizar volumes.
 
 ## Volume novo
 
-O Compose monta os quatro scripts em `/docker-entrypoint-initdb.d`, na ordem correta. Só executam automaticamente se o diretório de dados estiver vazio.
+O Compose monta os cinco scripts em `/docker-entrypoint-initdb.d`, na ordem correta. Só executam automaticamente se o diretório de dados estiver vazio.
 
 ## Volume existente
 
