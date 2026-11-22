@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Logo } from './AuthScreens.jsx';
+import WorkspaceLayout from './WorkspaceLayout.jsx';
 import { dataLocal, dataMaisDias, formatarData, validarDoacao } from '../utils/formularios.js';
 
 const CATEGORIAS = ['Refeições prontas', 'Frutas e verduras', 'Pães e massas', 'Laticínios', 'Não perecíveis', 'Outros'];
@@ -157,13 +157,13 @@ function ReservasOng({ usuario, doacoes, atualizar, navigate }) {
 export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, publicar, atualizar, vincularGoogle }) {
   const ong = usuario.tipo === 'ONG';
   const links = ong ? [['/app/inicio', 'Início'], ['/app/oportunidades', 'Doações disponíveis'], ['/app/reservas', 'Minhas reservas']] : [['/app/inicio', 'Início'], ['/app/doacoes', 'Minhas doações'], ['/app/nova-doacao', 'Nova doação']];
-  return <div className={`workspace theme-${tema}`}>
-    <aside className="sidebar"><div className="sidebar__logo"><Logo /></div>
-      <nav className="sidebar-nav" aria-label="Menu principal">{links.map(([path, label]) => <button key={path} type="button" className={`sidebar-link ${rota === path ? 'sidebar-link--active' : ''}`} onClick={() => navegar(path)}>{label}</button>)}</nav>
-      <div className="sidebar-bottom">{vincularGoogle && <button type="button" className="sidebar-logout" onClick={vincularGoogle}>Vincular Google</button>}<span className="sidebar-profile">{ong ? 'ONG' : 'DOADOR'} · {usuario.nome}</span><button type="button" onClick={sair} className="sidebar-logout">Sair ({ong ? 'ONG' : 'Doador'})</button></div>
-    </aside>
-    <main className="workspace-main"><button type="button" className="theme-switch workspace-theme-switch" onClick={alternarTema}>Modo {tema === 'dark' ? 'claro' : 'escuro'}</button>
-      <div className="workspace-body">
+  return <WorkspaceLayout
+    tema={tema} alternarTema={alternarTema} sair={sair}
+    perfil={`${ong ? 'ONG' : 'DOADOR'} · ${usuario.nome}`}
+    rotuloSair={`Sair (${ong ? 'ONG' : 'Doador'})`}
+    menu={links.map(([path, label]) => <button key={path} type="button" className={`sidebar-link ${rota === path ? 'sidebar-link--active' : ''}`} onClick={() => navegar(path)}>{label}</button>)}
+    acoes={vincularGoogle && <button type="button" className="sidebar-logout" onClick={vincularGoogle}>Vincular Google</button>}
+  >
         {ong ? (
           rota === '/app/oportunidades' ? <Oportunidades doacoes={doacoes} atualizar={atualizar} /> :
           rota === '/app/reservas' ? <ReservasOng usuario={usuario} doacoes={doacoes} atualizar={atualizar} navigate={navegar} /> :
@@ -173,7 +173,5 @@ export default function Workspace({ usuario, tema, alternarTema, rota, navegar, 
           rota === '/app/nova-doacao' ? <DoacaoWizard key={usuario.id} publicar={publicar} navigate={navegar} /> :
           <DashboardDoador usuario={usuario} doacoes={doacoes} navigate={navegar} />
         )}
-      </div>
-    </main>
-  </div>;
+  </WorkspaceLayout>;
 }

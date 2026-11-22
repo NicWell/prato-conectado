@@ -1,12 +1,182 @@
-.admin-panel{padding:32px clamp(16px,4vw,64px)}
-.admin-header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:32px}
-.admin-header h1{margin:0}.admin-header p,.admin-card p{overflow-wrap:anywhere}
-.admin-filters{display:flex;flex-wrap:wrap;gap:16px;align-items:end;margin-bottom:24px}
-.admin-filters label,.admin-reason{display:flex;flex-direction:column;gap:8px}
-.admin-filters input,.admin-filters select,.admin-reason textarea{padding:12px;border-radius:8px;border:1px solid var(--stroke);background:var(--input);color:var(--text)}
-.admin-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px}
-.admin-card,.admin-detail{border:1px solid var(--stroke);border-radius:12px;background:var(--panel);padding:24px;margin-bottom:16px;overflow-wrap:anywhere}
-.admin-card h3{margin-top:0}.admin-detail{align-self:start}.admin-detail dl div{margin-bottom:16px}
-.admin-detail dt{font-weight:700}.admin-detail dd{margin:6px 0;color:var(--sub)}
-.admin-reason textarea{min-height:110px;resize:vertical;margin-bottom:16px}
-@media(max-width:800px){.admin-columns{grid-template-columns:1fr}.admin-header{align-items:start;flex-direction:column}.admin-filters label{width:100%}}
+﻿.admin-panel {
+  container-type: inline-size;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 761px) {
+  .workspace-body:has(> .admin-panel) {
+    width: 100%;
+  }
+}
+
+.admin-menu-link {
+  text-decoration: none;
+}
+
+.admin-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) auto;
+  align-items: end;
+  gap: 12px;
+  min-inline-size: 0;
+  margin: 0 0 24px;
+  padding: 16px;
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
+  background: var(--panel);
+}
+
+.admin-filter-actions {
+  gap: 8px;
+  margin: 0 0 2px;
+}
+
+.admin-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.admin-list,
+.admin-data {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-list-heading,
+.admin-card-heading,
+.admin-detail-heading,
+.admin-pagination {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.admin-list-heading {
+  margin-bottom: 12px;
+}
+
+.admin-panel h2,
+.admin-panel h3 {
+  margin: 0;
+}
+
+.admin-panel h2 {
+  font-size: 18px;
+}
+
+.admin-panel h3 {
+  font-size: 15px;
+}
+
+.admin-card p,
+.admin-detail p,
+.admin-list-heading span,
+.admin-pagination span,
+.admin-history time {
+  color: var(--sub);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-card,
+.admin-detail {
+  padding: clamp(14px, 2vw, 20px);
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
+  background: var(--panel);
+}
+
+.admin-card p,
+.admin-detail p {
+  margin: 6px 0;
+}
+
+.admin-card button {
+  margin-top: 8px;
+}
+
+.admin-data {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 16px 0 0;
+}
+
+.admin-data div {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-data dt {
+  font-weight: 800;
+}
+
+.admin-data dd {
+  margin: 4px 0 0;
+  color: var(--sub);
+}
+
+.admin-detail-section {
+  margin: 16px 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--stroke);
+}
+
+.admin-detail-section > h3 {
+  margin-bottom: 10px;
+}
+
+.admin-detail-section textarea {
+  resize: vertical;
+}
+
+.admin-detail-section .action-row {
+  margin: 12px 0 0;
+}
+
+.admin-history {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+
+.admin-history time {
+  margin-inline-start: 8px;
+}
+
+.admin-pagination {
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 12px;
+}
+
+@container (max-width: 730px) {
+  .admin-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-columns:has(.admin-detail h2) > section:first-child {
+    display: none;
+  }
+}
+
+@container (max-width: 430px) {
+  .admin-search,
+  .admin-filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .admin-data {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
