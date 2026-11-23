@@ -7,6 +7,7 @@ from sqlalchemy import text
 from app.api.auth import router as auth_router
 from app.api.google import router as google_router
 from app.api.admin import router as admin_router
+from app.api.doacoes import router as doacoes_router
 from app.core.config import settings
 from app.criar_admin import provisionar_administrador
 from app.db.session import SessionLocal
@@ -43,6 +44,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(google_router)
 app.include_router(admin_router)
+app.include_router(doacoes_router)
 
 
 @app.get("/health", tags=["Infraestrutura"])

@@ -1,6 +1,6 @@
 # Backend de autenticação — Prato Conectado
 
-API FastAPI para **login/cadastro local, autenticação Google e aprovação administrativa**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). ONG/empresa usa CNPJ numérico ou alfanumérico; pessoa física usa CPF. Doações e revisão documental continuam pendentes. Google já está integrado ao React e exige Client ID e origens autorizadas.
+API FastAPI para **login/cadastro local, autenticação Google e aprovação administrativa**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). ONG/empresa usa CNPJ numérico ou alfanumérico; pessoa física usa CPF. A API também publica e reserva doações. Revisão documental continua pendente. Google já está integrado ao React e exige Client ID e origens autorizadas.
 
 Administração: `GET /api/admin/cadastros`, `GET /api/admin/cadastros/{perfil}/{id}` e `POST /api/admin/cadastros/{perfil}/{id}/decisao`. Exigem conta ativa com papel `ADMINISTRADOR`. Aplicar 005 antes de usar o backend e criar a conta com `docker compose exec backend python -m app.criar_admin`. Veja [contrato, migration e provisionamento](../docs/painel_administrativo.md).
 
@@ -10,6 +10,10 @@ Administração: `GET /api/admin/cadastros`, `GET /api/admin/cadastros/{perfil}/
 - `POST /api/auth/perfil` — conclui o perfil da conta autenticada, sem senha/e-mail/responsável no payload.
 - `POST /api/auth/google/desafio` e `POST /api/auth/google` — desafio OIDC e troca do ID token Google por JWT da aplicação.
 - `POST /api/auth/google/vincular/desafio` e `POST /api/auth/google/vincular` — vinculação autenticada com reconfirmação da senha local.
+- `GET /api/doacoes/catalogo` — categorias ativas e termo vigente para doadores aprovados.
+- `POST /api/doacoes` — doador aprovado publica uma oferta com um item, janela, aceite e triagem inicial.
+- `GET /api/doacoes` — doador aprovado lista suas ofertas; ONG aprovada lista oportunidades válidas e suas reservas.
+- `POST /api/doacoes/{id}/reserva` — ONG aprovada reserva; retorna `409` se a oferta estiver indisponível. Repetir a reserva da mesma ONG retorna sucesso enquanto a oferta estiver reservada para ela.
 - `GET /health` — liveness.
 - `GET /health/ready` — verifica conexão com o banco.
 - `/docs` — Swagger/OpenAPI.
@@ -47,7 +51,7 @@ $login = Invoke-RestMethod -Uri http://localhost:8000/api/auth/login -Method Pos
 Invoke-RestMethod -Uri http://localhost:8000/api/auth/me -Headers @{ Authorization = "Bearer $($login.access_token)" }
 ```
 
-**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Volumes existentes exigem as migrations pendentes até 005 antes de iniciar o backend. Veja [backup e aplicação](../database/README.md). Não remova volumes com dados.
+**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Volumes existentes exigem as migrations pendentes até 006 antes de iniciar o backend. Veja [backup e aplicação](../database/README.md). Não remova volumes com dados.
 
 ### Testes automatizados
 
@@ -57,12 +61,12 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-Sem configuração adicional, os testes usam SQLite em memória. Para validar o SQL real, defina `TEST_DATABASE_URL` com URL `postgresql+psycopg://...` de um **banco descartável e isolado**. Cada teste cria/remove um schema `teste_<uuid>` próprio e aplica os cinco scripts. A suíte cobre cadastro, validações, duplicidade, rollback e regressão do login. Testes Google assinam tokens com chave de teste e substituem somente o download dos certificados, mantendo validação criptográfica real. Não usam Client ID real nem dependem de rede. Testes exclusivos de migration/concorrência PostgreSQL são pulados em SQLite.
+Sem configuração adicional, os testes usam SQLite em memória. Para validar o SQL real, defina `TEST_DATABASE_URL` com URL `postgresql+psycopg://...` de um **banco descartável e isolado**. Cada teste cria/remove um schema `teste_<uuid>` próprio e aplica os seis scripts. A suíte cobre cadastro, validações, duplicidade, rollback e regressão do login. Testes Google assinam tokens com chave de teste e substituem somente o download dos certificados, mantendo validação criptográfica real. Não usam Client ID real nem dependem de rede. Testes exclusivos de migration/concorrência PostgreSQL são pulados em SQLite.
 
 Models: `app/models/entities.py`; schema de cadastro: `app/schemas/cadastro.py`; transação: `app/services/cadastro.py`; rotas: `app/api/auth.py`. Os schemas antigos de login permanecem no módulo de autenticação.
 
 ## Segurança / limitações
 
 - Token no `sessionStorage` é uma integração inicial simples; a evolução para produção deve incluir política robusta contra XSS, rate limiting, HTTPS, rotação/revogação de sessões e aceite do fluxo Google real conforme HU01.
-- Permissões são conferidas pelo backend nos endpoints protegidos (`/me`); **doações e reservas no React continuam mock; recuperação de senha real está indisponível** e não têm validade operacional nem segurança de servidor.
+- A API valida aprovação e perfil nas operações de doação. A reserva é imediata, inclusive antes da janela, enquanto a oferta estiver válida. O termo padrão é provisório para o piloto. Recuperação de senha, retirada, recebimento e encerramento automático continuam pendentes.
 - Segredos reais ficam apenas no `.env`, nunca no repositório. Evite disponibilizar contas demo publicamente.
