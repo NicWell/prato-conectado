@@ -21,11 +21,10 @@ Implementação sobre a versão enviada do Prato Conectado, de acordo com `docs/
 - `src/components/AuthScreens.jsx` — login, cadastro, completar perfil, pendente, reprovado, vinculação e aviso de recuperação não disponível na API.
 - `src/components/GoogleIdentityButton.jsx` — Google Identity Services, carregamento sob demanda e desafios com nonce.
 - `src/App.jsx` — controle da navegação e das regras de acesso.
-- `src/components/Workspace.jsx` — acesso à vinculação Google e simulação de doações.
+- `src/components/Workspace.jsx` — acesso à vinculação Google e fluxo de doações integrado à API.
 - `src/index.css` — campos e botão Google, mantendo o painel vermelho e a rolagem direita.
 - `tests/integracao.test.mjs` — testes de payload, validação e erros.
 
-A página antiga `src/pages/CadastroDoador.jsx` e `services/organizacoes.js` são legado e **não devem ser utilizados para novos cadastros**. O serviço legado permite somente simulação explícita (`VITE_MOCK_CADASTRO=true`); fora disso, orienta usar a tela atual e não faz requisições HTTP. O fluxo atual usa `AuthScreens.jsx` e `/api/auth/cadastro`.
 
 ## 1. Executar frontend local
 
@@ -40,14 +39,12 @@ npm run dev
 No `.env.local` use:
 
 ```env
-VITE_AUTH_MODE=api
 VITE_API_URL=http://localhost:8000
 VITE_GOOGLE_CLIENT_ID=SEU_CLIENT_ID.apps.googleusercontent.com
 ```
 
 `VITE_GOOGLE_CLIENT_ID` pode ficar vazio enquanto o Google Cloud não estiver configurado: login/cadastro por senha funcionarão normalmente se o backend estiver operacional.
 
-Para testes independentes do backend, use `VITE_AUTH_MODE=mock`. A integração Google real não é oferecida nesse modo.
 
 ## 2. Executar Docker (backend + banco + frontend)
 
@@ -65,7 +62,7 @@ docker compose up --build -d
 
 Frontend em `http://localhost:5173`; documentação do backend em `http://localhost:8000/docs`.
 
-O Compose original recebeu somente o argumento de build `VITE_GOOGLE_CLIENT_ID`. O Compose apenas do frontend (`docker-compose.frontend.yml`) também aceita variáveis `VITE_AUTH_MODE`, `VITE_API_URL` e `GOOGLE_CLIENT_ID`.
+O Compose original recebeu somente o argumento de build `VITE_GOOGLE_CLIENT_ID`. O Compose apenas do frontend (`docker-compose.frontend.yml`) também aceita variáveis `VITE_API_URL` e `GOOGLE_CLIENT_ID`.
 
 **Observação:** as variáveis `VITE_*` são incluídas na compilação do Vite. Ao mudar o Client ID, execute `docker compose up --build -d` para reconstruir a imagem. Não coloque Client Secret nem senha de serviço no Vite.
 

@@ -107,3 +107,72 @@ def test_publicacao_e_reserva_em_sessoes_independentes(db, tipo):
         assert db.scalar(text("SELECT count(*) FROM historico_doacao WHERE doacao_id = :id"), argumentos) == 2
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+@pytest.mark.parametrize("modalidade", ["RETIRADA", "ENTREGA"])
+def test_recebimento_registra_checklist_e_status(client, db, modalidade):
+    doador, _ = conta(db, "doador", "DOADOR")
+    ong, _ = conta(db, "ong", "ONG")
+    outra, _ = conta(db, "outra", "ONG")
+    dados = {**publicacao(client, doador), "modalidade": modalidade}
+    publicada = client.post(ROTA, headers=doador, json=dados)
+    assert publicada.status_code == 201, publicada.text
+    id_oferta = UUID(publicada.json()["id"])
+    base = f"{ROTA}/{id_oferta}"
+    assert client.post(f"{base}/reserva", headers=ong).status_code == 200
+    assert client.post(f"{base}/cancelamento", headers=doador).status_code == 409
+    checklist = {chave: True for chave in ("temperatura", "embalagem", "validade", "conservacao")}
+    assert client.post(f"{base}/recebimento", headers=outra, json=checklist).status_code == 403
+    assert client.post(f"{base}/recebimento", headers=ong, json=checklist).status_code == 409
+
+    db.execute(text("""
+        UPDATE doacoes SET inicio_retirada = now() - interval '1 hour' WHERE id = :id
+    """), {"id": id_oferta})
+    db.commit()
+    retirada = client.post(f"{base}/retirada", headers=ong)
+    assert retirada.status_code == (200 if modalidade == "RETIRADA" else 409)
+    assert client.post(f"{base}/recebimento", headers=ong, json={}).status_code == 422
+    for _ in range(2):
+        resposta = client.post(f"{base}/recebimento", headers=ong, json=checklist)
+        assert resposta.status_code == 200, resposta.text
+        assert resposta.json()["status"] == "ENTREGUE"
+
+    for auth in (ong, doador):
+        assert client.get(ROTA, headers=auth).json()[0]["status"] == "ENTREGUE"
+    assert db.scalar(text("""
+        SELECT respostas FROM triagens_doacao WHERE doacao_id = :id AND etapa = 'ONG_RECEBIMENTO'
+    """), {"id": id_oferta}) == checklist
+    assert db.scalar(text("""
+        SELECT count(*) FROM historico_doacao WHERE doacao_id = :id AND status_novo = 'ENTREGUE'
+    """), {"id": id_oferta}) == 1
+
+
+def test_cancelamento_e_expiracao_preservam_historico(client, db):
+    from app.services.doacoes import encerrar_vencidas
+
+    doador, _ = conta(db, "doador", "PESSOA_FISICA")
+    outro, _ = conta(db, "outro", "DOADOR")
+    ong, _ = conta(db, "ong", "ONG")
+    dados = publicacao(client, doador)
+    ids = [UUID(client.post(ROTA, headers=doador, json=dados).json()["id"]) for _ in range(3)]
+    cancelar = f"{ROTA}/{ids[0]}/cancelamento"
+    assert client.post(cancelar, headers=outro).status_code == 403
+    assert client.post(cancelar, headers=doador).json()["status"] == "CANCELADA"
+    assert client.post(f"{ROTA}/{ids[1]}/reserva", headers=ong).status_code == 200
+
+    db.execute(text("""
+        UPDATE doacoes SET inicio_retirada = now() - interval '2 hours',
+                           fim_retirada = now() - interval '1 hour'
+        WHERE id = ANY(:ids)
+    """), {"ids": ids[1:]})
+    db.commit()
+    encerrar_vencidas(db)
+    encerrar_vencidas(db)
+    status_doador = {item["id"]: item["status"] for item in client.get(ROTA, headers=doador).json()}
+    assert status_doador == {str(ids[0]): "CANCELADA", str(ids[1]): "ENCERRADA", str(ids[2]): "ENCERRADA"}
+    assert [(item["id"], item["status"]) for item in client.get(ROTA, headers=ong).json()] == [
+        (str(ids[1]), "ENCERRADA")
+    ]
+    assert db.execute(text("""
+        SELECT status_anterior, alterado_por_id FROM historico_doacao
+        WHERE status_novo = 'ENCERRADA' ORDER BY status_anterior
+    """)).all() == [("DISPONIVEL", None), ("RESERVADA", None)]

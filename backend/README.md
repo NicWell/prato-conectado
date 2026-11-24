@@ -1,6 +1,6 @@
 # Backend de autenticação — Prato Conectado
 
-API FastAPI para **login/cadastro local, autenticação Google e aprovação administrativa**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). ONG/empresa usa CNPJ numérico ou alfanumérico; pessoa física usa CPF. A API também publica e reserva doações. Revisão documental continua pendente. Google já está integrado ao React e exige Client ID e origens autorizadas.
+API FastAPI para **login/cadastro local, autenticação Google e aprovação administrativa**, com credenciais Argon2id no PostgreSQL e JWT (HS256, 1h por padrão). ONG/empresa usa CNPJ numérico ou alfanumérico; pessoa física usa CPF. A API também gerencia o fluxo de doação até o recebimento. Revisão documental continua pendente. Google já está integrado ao React e exige Client ID e origens autorizadas.
 
 Administração: `GET /api/admin/cadastros`, `GET /api/admin/cadastros/{perfil}/{id}` e `POST /api/admin/cadastros/{perfil}/{id}/decisao`. Exigem conta ativa com papel `ADMINISTRADOR`. Aplicar 005 antes de usar o backend e criar a conta com `docker compose exec backend python -m app.criar_admin`. Veja [contrato, migration e provisionamento](../docs/painel_administrativo.md).
 
@@ -14,6 +14,9 @@ Administração: `GET /api/admin/cadastros`, `GET /api/admin/cadastros/{perfil}/
 - `POST /api/doacoes` — doador aprovado publica uma oferta com um item, janela, aceite e triagem inicial.
 - `GET /api/doacoes` — doador aprovado lista suas ofertas; ONG aprovada lista oportunidades válidas e suas reservas.
 - `POST /api/doacoes/{id}/reserva` — ONG aprovada reserva; retorna `409` se a oferta estiver indisponível. Repetir a reserva da mesma ONG retorna sucesso enquanto a oferta estiver reservada para ela.
+- `POST /api/doacoes/{id}/cancelamento` — o doador proprietário pode cancelar uma oferta disponível dentro do prazo.
+- `POST /api/doacoes/{id}/retirada` — a ONG que reservou confirma retirada dentro da janela, na modalidade de retirada.
+- `POST /api/doacoes/{id}/recebimento` — a ONG que reservou confirma recebimento com `temperatura`, `embalagem`, `validade` e `conservacao` iguais a `true`. Na entrega pelo doador, o recebimento ocorre dentro da janela. Na retirada, ocorre depois da retirada e antes do vencimento do alimento.
 - `GET /health` — liveness.
 - `GET /health/ready` — verifica conexão com o banco.
 - `/docs` — Swagger/OpenAPI.
@@ -68,5 +71,5 @@ Models: `app/models/entities.py`; schema de cadastro: `app/schemas/cadastro.py`;
 ## Segurança / limitações
 
 - Token no `sessionStorage` é uma integração inicial simples; a evolução para produção deve incluir política robusta contra XSS, rate limiting, HTTPS, rotação/revogação de sessões e aceite do fluxo Google real conforme HU01.
-- A API valida aprovação e perfil nas operações de doação. A reserva é imediata, inclusive antes da janela, enquanto a oferta estiver válida. O termo padrão é provisório para o piloto. Recuperação de senha, retirada, recebimento e encerramento automático continuam pendentes.
+- A API valida aprovação e perfil nas operações de doação. A reserva é imediata, inclusive antes da janela, enquanto a oferta estiver válida. O termo padrão é provisório para o piloto. A recuperação de senha continua pendente. A cada minuto o backend encerra ofertas disponíveis ou reservadas após a janela e doações retiradas após a validade. O histórico registra o encerramento e a ONG ainda pode consultar a reserva encerrada.
 - Segredos reais ficam apenas no `.env`, nunca no repositório. Evite disponibilizar contas demo publicamente.

@@ -4,13 +4,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# Autenticação real selecionada por build args. Doações continuam simuladas.
-ARG VITE_MOCK_MODE=true
-ARG VITE_AUTH_MODE=mock
+# O navegador usa estes endereços para acessar a API e o Google.
 ARG VITE_API_URL=http://localhost:8000
 ARG VITE_GOOGLE_CLIENT_ID=
-ENV VITE_MOCK_MODE=$VITE_MOCK_MODE
-ENV VITE_AUTH_MODE=$VITE_AUTH_MODE
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build

@@ -158,3 +158,87 @@ def reservar(db, ong, usuario, doacao_id):
     """), valores)
     db.commit()
     return {"id": doacao_id, "status": "RESERVADA"}
+
+
+def transicionar(db, cadastro, usuario, doacao_id, destino, checklist=None):
+    valores = {"id": doacao_id, "perfil_id": cadastro.id, "usuario_id": usuario.id, "destino": destino}
+    oferta = db.execute(text("""
+        SELECT d.status, d.modalidade, d.doador_id, d.doador_pf_id,
+               d.inicio_retirada, d.fim_retirada
+        FROM doacoes d WHERE d.id = :id FOR UPDATE
+    """), valores).first()
+    if oferta is None:
+        raise HTTPException(404, "Doação não encontrada.")
+
+    if destino == "CANCELADA":
+        autorizado = cadastro.id in (oferta.doador_id, oferta.doador_pf_id)
+    else:
+        autorizado = db.scalar(text("""
+            SELECT EXISTS (
+                SELECT 1 FROM solicitacoes_doacao
+                WHERE doacao_id = :id AND ong_id = :perfil_id AND status = 'ACEITA'
+            )
+        """), valores)
+    if not autorizado:
+        raise HTTPException(403, "Seu perfil não pode alterar esta doação.")
+    if oferta.status == destino:
+        return {"id": doacao_id, "status": destino}
+
+    anterior = {
+        "CANCELADA": "DISPONIVEL",
+        "RETIRADA": "RESERVADA",
+        "ENTREGUE": "RETIRADA" if oferta.modalidade == "RETIRADA" else "RESERVADA",
+    }[destino]
+    if oferta.status != anterior or (destino == "RETIRADA" and oferta.modalidade != "RETIRADA"):
+        raise HTTPException(409, "Esta ação não está disponível para o status ou a modalidade da doação.")
+
+    agora = db.scalar(text("SELECT clock_timestamp()"))
+    if anterior != "RETIRADA" and agora >= oferta.fim_retirada:
+        raise HTTPException(409, "A janela da doação terminou.")
+    if destino != "CANCELADA":
+        if agora < oferta.inicio_retirada:
+            raise HTTPException(409, "A janela da doação ainda não começou.")
+        if db.scalar(text("""
+            SELECT EXISTS (
+                SELECT 1 FROM itens_doacao WHERE doacao_id = :id AND validade_em <= :agora
+            )
+        """), {**valores, "agora": agora}):
+            raise HTTPException(409, "A validade do alimento terminou.")
+
+    if checklist is not None:
+        db.execute(text("""
+            INSERT INTO triagens_doacao (doacao_id, organizacao_id, preenchido_por_id,
+                                        etapa, resultado, respostas)
+            VALUES (:id, :perfil_id, :usuario_id, 'ONG_RECEBIMENTO', 'APTA', CAST(:respostas AS jsonb))
+        """), {**valores, "respostas": json.dumps(checklist.model_dump())})
+    db.execute(text("""
+        UPDATE doacoes SET status = :destino, atualizado_em = clock_timestamp() WHERE id = :id
+    """), valores)
+    db.execute(text("""
+        INSERT INTO historico_doacao (doacao_id, alterado_por_id, status_anterior, status_novo)
+        VALUES (:id, :usuario_id, :anterior, :destino)
+    """), {**valores, "anterior": anterior})
+    db.commit()
+    return {"id": doacao_id, "status": destino}
+
+
+def encerrar_vencidas(db):
+    db.execute(text("""
+        WITH vencidas AS (
+            SELECT d.id, d.status FROM doacoes d
+            WHERE (d.status IN ('DISPONIVEL', 'RESERVADA') AND d.fim_retirada <= statement_timestamp())
+               OR (d.status IN ('DISPONIVEL', 'RESERVADA', 'RETIRADA') AND EXISTS (
+                   SELECT 1 FROM itens_doacao i
+                   WHERE i.doacao_id = d.id AND i.validade_em <= statement_timestamp()
+               ))
+            ORDER BY d.id
+            LIMIT 500
+            FOR UPDATE OF d SKIP LOCKED
+        ), encerradas AS (
+            UPDATE doacoes d SET status = 'ENCERRADA', atualizado_em = clock_timestamp()
+            FROM vencidas v WHERE d.id = v.id RETURNING d.id, v.status
+        )
+        INSERT INTO historico_doacao (doacao_id, status_anterior, status_novo, observacao)
+        SELECT id, status, 'ENCERRADA', 'Prazo da doação expirado.' FROM encerradas
+    """))
+    db.commit()

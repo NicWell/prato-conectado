@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import logoPratoConectado from '../assets/logo-prato-conectado.png';
-import { emailValido, formatarCpf, formatarTelefone, formatarCnpj } from '../utils/formularios.js';
+import { formatarCpf, formatarTelefone, formatarCnpj } from '../utils/formularios.js';
 import { FORM_INICIAL, ESTADOS, validarFormularioCadastro } from '../utils/cadastro.js';
-import { dadosDemo } from '../mock/store.js';
 import GoogleIdentityButton from './GoogleIdentityButton.jsx';
 
 export function Logo({ large = false }) {
@@ -38,7 +37,7 @@ function Field({ id, label, error, hint, ...props }) {
     {error && <small id={`${id}-error`} className="field-error" role="alert">{error}</small>}
   </div>;
 }
-export function LoginScreen({ apiAtiva = false, theme, toggleTheme, onLogin, onGoogleLogin, onDemo, navigate, onReset }) {
+export function LoginScreen({ theme, toggleTheme, onLogin, onGoogleLogin, navigate, onReset }) {
   const [email, setEmail] = useState(''); const [senha, setSenha] = useState('');
   const [erro, setErro] = useState(''); const [enviando, setEnviando] = useState(false);
   async function entrar(e) {
@@ -55,11 +54,10 @@ export function LoginScreen({ apiAtiva = false, theme, toggleTheme, onLogin, onG
       <button disabled={enviando} type="submit" className="btn btn--red btn--wide">{enviando ? 'Entrando...' : 'Entrar'}</button>
     </form>
     <div className="divider-label"><span>ou</span></div>
-    {apiAtiva ? <GoogleIdentityButton onCredential={onGoogleLogin} disabled={enviando} /> : <button type="button" className="btn btn--outline btn--wide" onClick={() => onDemo('DOADOR')}>Entrar como doador (mock)</button>}
-    {apiAtiva && <p className="helper-center">Primeiro acesso Google? Após entrar, você poderá completar seus dados. Se seu e-mail já possui uma conta local, entre com senha para vincular o Google.</p>}
+    <GoogleIdentityButton onCredential={onGoogleLogin} disabled={enviando} />
+    <p className="helper-center">Primeiro acesso Google? Após entrar, você poderá completar seus dados. Se seu e-mail já possui uma conta local, entre com senha para vincular o Google.</p>
     <div className="auth-bottom"><p>Ainda não tem acesso?</p>
       <button type="button" className="btn btn--yellow btn--wide" onClick={() => navigate('/cadastro')}>Criar usuário</button>
-      {!apiAtiva && <button type="button" className="underlined" onClick={() => navigate('/demonstracao')}>Contas de demonstração</button>}
     </div>
   </AuthShell>;
 }
@@ -123,7 +121,7 @@ function CadastroForm({ theme, toggleTheme, onSubmit, navigate, perfilGoogle = f
 }
 export function RegisterScreen(props) { return <CadastroForm {...props} />; }
 export function CompleteProfileScreen(props) { return <CadastroForm {...props} perfilGoogle />; }
-export function PendingScreen({ usuario, theme, toggleTheme, onLogout, onRefresh, onLink, apiAtiva = false }) {
+export function PendingScreen({ usuario, theme, toggleTheme, onLogout, onRefresh, onLink }) {
   const [erro, setErro] = useState(''); const [carregando, setCarregando] = useState(false);
   async function atualizar() { setCarregando(true); setErro(''); try { await onRefresh(); } catch (e) { setErro(e.message); } finally { setCarregando(false); } }
   return <AuthShell theme={theme} toggleTheme={toggleTheme} tipo="REGISTER">
@@ -132,8 +130,8 @@ export function PendingScreen({ usuario, theme, toggleTheme, onLogout, onRefresh
       <div className="pending-status"><span>Status do cadastro</span><strong>Pendente de aprovação</strong></div>
       <p className="field-hint">Até a aprovação, não é possível publicar ou reservar doações.</p>
       {erro && <p className="alert alert--error" role="alert">{erro}</p>}
-      {apiAtiva && <button type="button" onClick={atualizar} disabled={carregando} className="btn btn--yellow btn--wide">{carregando ? 'Consultando...' : 'Consultar situação'}</button>}
-      {apiAtiva && !usuario.google_vinculado && <button type="button" onClick={onLink} className="btn btn--outline btn--wide">Vincular minha conta Google</button>}
+      <button type="button" onClick={atualizar} disabled={carregando} className="btn btn--yellow btn--wide">{carregando ? 'Consultando...' : 'Consultar situação'}</button>
+      {!usuario.google_vinculado && <button type="button" onClick={onLink} className="btn btn--outline btn--wide">Vincular minha conta Google</button>}
       <button type="button" onClick={onLogout} className="btn btn--red btn--wide">Sair</button>
     </div>
   </AuthShell>;
@@ -166,42 +164,10 @@ export function GoogleLinkScreen({ usuario, theme, toggleTheme, navigate, onVinc
     <button className="btn btn--outline btn--wide" type="button" onClick={() => navigate('/app/inicio')}>Voltar</button>
   </AuthShell>;
 }
-export function ResetScreen({ apiAtiva = false, theme, toggleTheme, onReset, navigate }) {
-  const [email, setEmail] = useState(''); const [senha, setSenha] = useState(''); const [confirmar, setConfirmar] = useState('');
-  const [msg, setMsg] = useState(''); const [erro, setErro] = useState(''); const [loading, setLoading] = useState(false);
-  async function enviar(e) {
-    e.preventDefault(); if (apiAtiva) return;
-    setErro(''); setMsg('');
-    if (!emailValido(email)) return setErro('Informe um e-mail válido.');
-    if (senha.length < 8) return setErro('A senha deve ter pelo menos 8 caracteres.');
-    if (senha !== confirmar) return setErro('As senhas não coincidem.');
-    setLoading(true); try { await onReset(email, senha); setMsg('Senha alterada apenas na simulação local.'); } catch (e) { setErro(e.message); } finally { setLoading(false); }
-  }
+export function ResetScreen({ theme, toggleTheme, navigate }) {
   return <AuthShell theme={theme} toggleTheme={toggleTheme} tipo="LOGIN">
-    <p className="eyebrow">ACESSO À PLATAFORMA</p><h2 className="auth-title">Recuperar senha</h2>
-    {apiAtiva ? <p className="alert alert--error" role="status">A recuperação de senha pela API ainda não foi implementada. Nenhuma senha real será alterada nesta tela. Entre em contato com a equipe responsável.</p> : <form className="auth-form" onSubmit={enviar} noValidate>
-      <p className="auth-subtitle">Modo de demonstração: alteração apenas neste navegador.</p>
-      <Field id="email" label="E-mail cadastrado" type="email" value={email} onChange={e => setEmail(e.target.value)} />
-      <Field id="senha" label="Nova senha" type="password" value={senha} onChange={e => setSenha(e.target.value)} />
-      <Field id="confirmar" label="Confirmar senha" type="password" value={confirmar} onChange={e => setConfirmar(e.target.value)} />
-      {erro && <p className="alert alert--error" role="alert">{erro}</p>}{msg && <p className="alert alert--success" role="status">{msg}</p>}
-      <button disabled={loading} className="btn btn--red btn--wide" type="submit">{loading ? 'Alterando...' : 'Alterar senha (mock)'}</button>
-    </form>}
-    <button className="btn btn--outline btn--wide" type="button" onClick={() => navigate('/entrar')}>Voltar ao login</button>
-  </AuthShell>;
-}
-export function DemoScreen({ apiAtiva = false, theme, toggleTheme, onDemo, onRestore, navigate }) {
-  const [msg, setMsg] = useState('');
-  async function restaurar() { if (!window.confirm('Apagar dados demonstrativos deste navegador?')) return; await onRestore(); setMsg('Dados mock restaurados.'); }
-  return <AuthShell theme={theme} toggleTheme={toggleTheme} tipo="LOGIN">
-    <p className="eyebrow">AMBIENTE DE TESTES</p><h2 className="auth-title">Contas de demonstração</h2>
-    {apiAtiva ? <p className="alert alert--error">No modo API, as contas de demonstração só funcionam se foram habilitadas e criadas pelo backend. Nenhum usuário mock autentica na API.</p> : <>
-      <div className="demo-account"><strong>Doador</strong><code>{dadosDemo.doador}</code><button className="btn btn--red" onClick={() => onDemo('DOADOR')}>Entrar como doador</button></div>
-      <div className="demo-account"><strong>ONG</strong><code>{dadosDemo.ong}</code><button className="btn btn--red" onClick={() => onDemo('ONG')}>Entrar como ONG</button></div>
-      <p className="field-hint">Senha inicial: {dadosDemo.senha}</p>
-      <button type="button" className="btn btn--outline btn--wide" onClick={restaurar}>Restaurar dados de exemplo</button>
-      {msg && <p className="alert alert--success" role="status">{msg}</p>}
-    </>}
-    <button className="underlined" type="button" onClick={() => navigate('/entrar')}>Voltar ao login</button>
+    <h2 className="auth-title">Recuperar senha</h2>
+    <p className="alert alert--error" role="status">Para recuperar o acesso, entre em contato com a equipe responsável.</p>
+    <button type="button" className="link-button" onClick={() => navigate('/entrar')}>Voltar para o login</button>
   </AuthShell>;
 }

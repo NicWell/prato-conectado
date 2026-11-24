@@ -1,6 +1,6 @@
 # Contrato de autenticação — Integração React / FastAPI
 
-**Etapa atual:** login/cadastro local e autenticação/vinculação Google no backend. Consulte [cadastro](cadastro_real.md) e [Google](integracao_google.md). Aprovação, recuperação de senha e doações continuam pendentes. O React integra login, cadastro, Google, vinculação e conclusão de perfil.
+**Etapa atual:** login/cadastro local e autenticação/vinculação Google no backend. Consulte [cadastro](cadastro_real.md) e [Google](integracao_google.md). A recuperação de senha continua pendente. O React integra login, cadastro, Google, vinculação e conclusão de perfil.
 
 ## Endpoints
 
@@ -35,7 +35,7 @@ Resposta de sucesso (200; IDs e token são ilustrativos):
 }
 ```
 
-O campo `id` corresponde à organização quando vinculada, para manter a compatibilidade de tela com os dados demonstrativos existentes; `usuario_id` identifica a conta de autenticação. O backend nunca aceita `tipo`, `papel_sistema` ou `status` fornecidos no login; deriva esses valores do banco. Se não houver organização, o tipo é `SEM_ORGANIZACAO` e o status é `PENDENTE`.
+O campo `id` corresponde à organização quando vinculada, para identificar o perfil na interface; `usuario_id` identifica a conta de autenticação. O backend nunca aceita `tipo`, `papel_sistema` ou `status` fornecidos no login; deriva esses valores do banco. Se não houver organização, o tipo é `SEM_ORGANIZACAO` e o status é `PENDENTE`.
 
 Erros esperados: `401` em e-mail/senha incorretos, usuário desativado ou sem credencial local; `422` em entrada malformada ou e-mail inválido.
 
@@ -55,16 +55,15 @@ Retorna 200 com o objeto `usuario` acima. Retorna 401 se o token estiver ausente
 
 ## Modo de login no React
 
-O arquivo `frontend/src/services/auth.js` implementa login/consulta de sessão via `fetch` e token em `sessionStorage`. `frontend/src/App.jsx` seleciona a API conforme a flag **de build** `VITE_AUTH_MODE=api`. O Compose completo já fornece essa flag. Para usar `npm run dev`, defina em `frontend/.env.local`:
+O arquivo `frontend/src/services/auth.js` implementa login/consulta de sessão via `fetch` e token em `sessionStorage`. O React usa sempre a API. Para usar `npm run dev`, defina em `frontend/.env.local`:
 
 ```env
-VITE_AUTH_MODE=api
 VITE_API_URL=http://localhost:8000
 ```
 
-O `docker-compose.frontend.yml` inicia somente a interface, em modo API por padrão. Para simular sem backend, use `VITE_AUTH_MODE=mock`. Doações e reservas permanecem locais.
+O `docker-compose.frontend.yml` inicia somente a interface e exige uma API acessível.
 
-No modo API, o botão oficial Google usa GIS e os endpoints reais. Atalhos mock ficam restritos ao modo mock. Contas demo do servidor usam login manual com `DEMO_PASSWORD` e seed habilitado.
+O botão oficial Google usa GIS e os endpoints da API. Contas demo do servidor usam login manual com `DEMO_PASSWORD` e seed habilitado.
 
 ## SQL e Docker
 
@@ -78,7 +77,7 @@ Para consultar o banco no VS Code usando SQLTools, configure host `localhost`, p
 
 `POST /api/auth/cadastro` retorna `201` no mesmo formato do login. `perfil` também pode ser `PESSOA_FISICA`; nesse caso, `id` identifica o perfil em `doadores_pessoa_fisica`. O contrato antigo de login para organizações é preservado. Para proteger senhas/documentos, respostas `422` omitem o payload recebido e mantêm apenas `loc`, `msg` e `type` por erro.
 
-O Compose aplica migrations até 004 em volumes novos. Em volumes existentes, aplique as pendentes conforme [database/README.md](../database/README.md). A integração React dos novos endpoints está implementada.
+O Compose aplica migrations até 006 em volumes novos. Em volumes existentes, aplique as pendentes conforme [database/README.md](../database/README.md). A integração React dos novos endpoints está implementada.
 
 ## Próximas entregas
 

@@ -39,24 +39,6 @@ export const formatarData = (value) => {
   const [a, m, d] = value.split('-'); return `${d}/${m}/${a}`;
 };
 export const campoRequired = (value) => String(value ?? '').trim().length > 0;
-export const validarRegistro = (v) => {
-  const e = {};
-  if (!campoRequired(v.nome)) e.nome = 'Informe o nome da organização ou empresa.';
-  if (!campoRequired(v.endereco)) e.endereco = 'Informe o endereço completo.';
-  if (!telefoneValido(v.telefone)) e.telefone = 'Informe um telefone válido com DDD.';
-  if (!campoRequired(v.responsavel)) e.responsavel = 'Informe o nome do responsável.';
-  if (!cpfValido(v.cpf)) e.cpf = 'Informe um CPF válido.';
-  if (!emailValido(v.email)) e.email = 'Informe um e-mail válido.';
-  if ((v.senha || '').length < 8) e.senha = 'A senha precisa ter pelo menos 8 caracteres.';
-  if (v.confirmacao !== v.senha) e.confirmacao = 'As senhas não coincidem.';
-  if (v.tipo === 'ONG' || v.perfil === 'EMPRESA') {
-    if (!cnpjValido(v.cnpj)) e.cnpj = 'Informe um CNPJ válido.';
-  }
-  if (v.tipo === 'ONG' && (!Number.isInteger(Number(v.capacidade)) || Number(v.capacidade) <= 0)) {
-    e.capacidade = 'A capacidade deve ser maior que zero.';
-  }
-  return e;
-};
 export const validarDoacao = (v, passo) => {
   const e = {};
   if (passo === 1) {
