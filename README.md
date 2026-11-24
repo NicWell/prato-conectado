@@ -6,11 +6,11 @@ Monorepositório: `frontend/` (React/Vite), `backend/` (FastAPI), `database/` (P
 
 - Login de **e-mail/senha** via `POST /api/auth/login`, JWT e consulta `/api/auth/me`.
 - PostgreSQL persiste usuários e hashes Argon2id; script incremental ajusta o modelo de login Google documentado.
-- `docker-compose.yml` inicia **db + backend + frontend**; `docker-compose.frontend.yml` inicia somente o frontend e aceita modo API ou mock.
+- `docker-compose.yml` inicia **db + backend + frontend**; `docker-compose.frontend.yml` inicia somente o frontend e requer a API acessível.
 - Cadastro real em `POST /api/auth/cadastro`: ONG e empresa com CNPJ numérico/alfanumérico; doador pessoa física com CPF. Conta, credencial e perfil são criados em transação, sempre `PENDENTE`.
 - Login Google, vinculação explícita e conclusão de perfil estão implementados no backend e integrados ao React/GIS. Configure `GOOGLE_CLIENT_ID`, repassado ao build como `VITE_GOOGLE_CLIENT_ID`: [contrato Google](docs/integracao_google.md).
 - Painel administrativo integrado à API: conta exclusiva da equipe, consulta de ONGs/doadores, aprovação e reprovação justificada, histórico e notificação interna. Veja [configuração e criação da conta](docs/painel_administrativo.md). Revisão documental ainda pendente.
-- Doadores aprovados (empresa ou PF) publicam ofertas e ONGs aprovadas reservam pelo PostgreSQL. Cada oferta admite uma reserva, e os dois perfis consultam seu status ao recarregar. A reserva é imediata e pode ocorrer antes da janela. Retirada, recebimento, encerramento automático e recuperação de senha continuam pendentes.
+- Doadores aprovados (empresa ou PF) publicam ofertas e ONGs aprovadas reservam pelo PostgreSQL. Cada oferta admite uma reserva, e os dois perfis consultam seu status ao recarregar. A reserva é imediata e pode ocorrer antes da janela. Cancelamento, retirada, recebimento com checklist da ONG e encerramento automático também são persistidos. A recuperação de senha segue pendente.
 - Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 006](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
 
 ## Iniciar no Windows (PowerShell)
@@ -37,9 +37,9 @@ docker compose ps
 3. Copie o campo `access_token`, pressione **Authorize** no Swagger, informe o token e chame `GET /api/auth/me`.
 4. Entre no frontend com a mesma conta e confira o redirecionamento para a área de doações.
 
-**Importante:** login e cadastro usam a API quando compilados com `VITE_AUTH_MODE=api`; os dois arquivos Compose configuram API por padrão. O Compose separado inicia somente o frontend e exige backend acessível. Para simular sem backend, defina `VITE_AUTH_MODE=mock` antes de reconstruir o Compose separado. Para `npm run dev`, configure `frontend/.env.local` com `VITE_AUTH_MODE=api`, `VITE_API_URL=http://localhost:8000` e, para Google, `VITE_GOOGLE_CLIENT_ID` igual ao backend.
+**Importante.** O React sempre usa a API. Para desenvolvimento com Vite, configure a URL da API e, se usar Google, o Client ID em `frontend/.env.local`.
 
-No modo API, o botão oficial Google usa GIS quando configurado. Atalhos de contas mock ficam disponíveis somente no modo mock. Contas demo do servidor usam login manual com `DEMO_PASSWORD` e dependem do seed habilitado. Não use contas demo em produção.
+O botão oficial Google usa GIS quando configurado. Contas demo do servidor usam login manual com `DEMO_PASSWORD` e dependem do seed habilitado. Não use contas demo em produção.
 
 Sessões expiradas retornam ao login com aviso. Falhas de rede preservam a sessão para nova tentativa. Veja o [roteiro de validação](docs/validacao_autenticacao.md).
 

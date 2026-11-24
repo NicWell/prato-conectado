@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cadastrarApi, completarPerfilApi, loginApi, loginGoogleApi, logoutApi, requisicaoApi, usuarioSessaoApi, validarSessaoApi, vincularGoogleApi } from '../src/services/auth.js';
 import { decidirCadastro, detalharCadastro, listarCadastros } from '../src/services/admin.js';
+import { atualizarDoacaoApi } from '../src/services/doacoes.js';
 import { destino } from '../src/utils/sessao.js';
 
 class MemoryStorage {
@@ -137,4 +138,27 @@ test('operação protegida sem JWT encerra sessão e avisa expiração', async (
   await assert.rejects(()=>requisicaoApi('/api/auth/perfil',{method:'POST',autenticada:true}),e=>e.status===401);
   assert.equal(usuarioSessaoApi(),null);
   assert.ok(eventos.includes('prato:sessao-expirada'));
+});
+
+test('ações de doação enviam o JWT e o checklist somente no recebimento', async () => {
+  sessionStorage.setItem('prato_conectado_api_access_token', 'jwt-doacao');
+  const chamadas = instalarFetch(() => json({ id: 'doacao-id' }));
+  const checklist = { temperatura: true, embalagem: true, validade: true, conservacao: true };
+  for (const acao of ['RESERVAR', 'CANCELAR', 'RETIRAR']) {
+    await atualizarDoacaoApi('doacao-id', acao);
+  }
+  await atualizarDoacaoApi('doacao-id', 'RECEBER', checklist);
+  assert.deepEqual(chamadas.map(({ url }) => new URL(url).pathname), [
+    '/api/doacoes/doacao-id/reserva',
+    '/api/doacoes/doacao-id/cancelamento',
+    '/api/doacoes/doacao-id/retirada',
+    '/api/doacoes/doacao-id/recebimento',
+  ]);
+  for (const { opcoes } of chamadas) {
+    assert.equal(opcoes.method, 'POST');
+    assert.equal(opcoes.headers.Authorization, 'Bearer jwt-doacao');
+  }
+  assert.ok(chamadas.slice(0, 3).every(({ opcoes }) => opcoes.body === undefined));
+  assert.deepEqual(JSON.parse(chamadas[3].opcoes.body), checklist);
+  sessionStorage.clear();
 });

@@ -1,6 +1,5 @@
 /** HTTP e sessão do frontend. Não confundir o ID token Google com o JWT da API. */
 const API_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
-export const USAR_API_AUTH = import.meta.env?.VITE_AUTH_MODE === 'api';
 export const GOOGLE_CLIENT_ID = (import.meta.env?.VITE_GOOGLE_CLIENT_ID || '').trim();
 const TOKEN_KEY = 'prato_conectado_api_access_token';
 const USER_KEY = 'prato_conectado_api_user';

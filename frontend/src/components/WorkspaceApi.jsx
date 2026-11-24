@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { catalogoDoacoesApi, listarDoacoesApi, publicarDoacaoApi, reservarDoacaoApi } from '../services/doacoes.js';
+import { catalogoDoacoesApi, listarDoacoesApi, publicarDoacaoApi, atualizarDoacaoApi } from '../services/doacoes.js';
 import Workspace from './Workspace.jsx';
 
 export default function WorkspaceApi(props) {
@@ -9,7 +9,7 @@ export default function WorkspaceApi(props) {
   const [resultado, setResultado] = useState(null);
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(true);
-  const [reservando, setReservando] = useState(false);
+  const [processando, setProcessando] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -29,28 +29,28 @@ export default function WorkspaceApi(props) {
     setConsulta(valor => valor + 1);
   }
 
-  async function reservar(id) {
-    setReservando(true);
+  async function atualizar(id, acao, checklist) {
+    setProcessando(true);
     setErro('');
     try {
-      await reservarDoacaoApi(id);
-      navegar('/app/reservas');
+      await atualizarDoacaoApi(id, acao, checklist);
+      if (acao === 'RESERVAR') navegar('/app/reservas');
+      else recarregar();
     } catch (falha) {
       setErro(falha.message);
       if (falha.status === 409) recarregar();
     } finally {
-      setReservando(false);
+      setProcessando(false);
     }
   }
 
   return <Workspace
     {...props}
-    apiAtiva
     doacoes={!novaDoacao && resultado ? resultado : []}
     catalogo={novaDoacao ? resultado : null}
     publicar={form => publicarDoacaoApi(form, resultado.termo.id)}
-    atualizar={reservar}
-    reservando={reservando}
+    atualizar={atualizar}
+    processando={processando}
     carregando={carregando}
     erro={erro}
     recarregar={() => { setErro(''); recarregar(); }}

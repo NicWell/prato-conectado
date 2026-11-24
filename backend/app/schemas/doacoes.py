@@ -29,3 +29,11 @@ class PublicacaoDoacao(BaseModel):
     fim_retirada: AwareDatetime
     termo_id: UUID
     checklist: ChecklistDoador
+
+class ChecklistOng(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    temperatura: Literal[True]
+    embalagem: Literal[True]
+    validade: Literal[True]
+    conservacao: Literal[True]

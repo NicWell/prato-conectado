@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { cnpjValido, cpfValido, validarDoacao, dataMaisDias } from '../src/utils/formularios.js';
 import { validarFormularioCadastro, FORM_INICIAL } from '../src/utils/cadastro.js';
 import { montarCadastro, montarPerfil, interpretarErro } from '../src/services/auth.js';
 const base = {
@@ -57,4 +58,17 @@ test('erro Google preserva código e mensagem para vinculação', () => {
   const e = interpretarErro(409, { detail: { codigo: 'VINCULACAO_NECESSARIA', mensagem: 'Entre com senha para vincular.' } });
   assert.equal(e.codigo, 'VINCULACAO_NECESSARIA');
   assert.equal(e.message, 'Entre com senha para vincular.');
+});
+
+test('CNPJ e CPF válidos passam nas validações', () => {
+  assert.equal(cnpjValido('11.222.333/0001-81'), true);
+  assert.equal(cnpjValido('11.111.111/1111-11'), false);
+  assert.equal(cpfValido('529.982.247-25'), true);
+  assert.equal(cpfValido('111.111.111-11'), false);
+});
+
+test('campos da doação possuem validação por etapa', () => {
+  assert.ok(validarDoacao({ descricao: '', quantidade: '-2', validade: dataMaisDias(-1) }, 1).descricao);
+  assert.ok(validarDoacao({ retiradaData: dataMaisDias(1), retiradaInicio: '12:00', retiradaFim: '11:00' }, 2).retiradaFim);
+  assert.ok(validarDoacao({ checklist: { a: false } }, 3).checklist);
 });

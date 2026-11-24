@@ -44,8 +44,15 @@ export function publicarDoacaoApi(form, termoId) {
   });
 }
 
-export function reservarDoacaoApi(id) {
-  return requisicaoApi(`${caminho}/${encodeURIComponent(id)}/reserva`, {
-    method: 'POST', autenticada: true,
+const operacoes = {
+  RESERVAR: 'reserva',
+  CANCELAR: 'cancelamento',
+  RETIRAR: 'retirada',
+  RECEBER: 'recebimento',
+};
+
+export function atualizarDoacaoApi(id, acao, checklist) {
+  return requisicaoApi(`${caminho}/${encodeURIComponent(id)}/${operacoes[acao]}`, {
+    method: 'POST', autenticada: true, payload: checklist,
   });
 }

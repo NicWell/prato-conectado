@@ -2,7 +2,6 @@ import { useState } from 'react';
 import WorkspaceLayout from './WorkspaceLayout.jsx';
 import { dataLocal, dataMaisDias, formatarData, validarDoacao } from '../utils/formularios.js';
 
-const CATEGORIAS = ['Refeições prontas', 'Frutas e verduras', 'Pães e massas', 'Laticínios', 'Não perecíveis', 'Outros'];
 const UNIDADES = ['porções', 'kg', 'unidades', 'litros', 'caixas'];
 const CHECKS = [
   ['temperatura', 'Alimento em temperatura segura'],
@@ -11,7 +10,7 @@ const CHECKS = [
   ['conservacao', 'Sem sinais de estrago'],
   ['termo', 'Li e aceito o termo de responsabilidade'],
 ];
-const vazio = () => ({ categoria: 'Refeições prontas', descricao: '', quantidade: '1', unidade: 'porções',
+const vazio = () => ({ descricao: '', quantidade: '1', unidade: 'porções',
   validade: dataMaisDias(3), entrega: 'RETIRADA', retiradaData: dataMaisDias(1),
   retiradaInicio: '10:00', retiradaFim: '12:00', checklist: Object.fromEntries(CHECKS.map(([key]) => [key, false])) });
 function Etiqueta({ status }) {
@@ -53,7 +52,7 @@ function DashboardDoador({ usuario, doacoes, navigate }) {
     <div className="dashboard-help"><h3>Faça a diferença com seus alimentos</h3><p>Publique uma doação, informe a janela de retirada e aguarde uma ONG reservar. Você pode acompanhar cada etapa em “Minhas doações”.</p></div>
   </>;
 }
-function MinhasDoacoes({ usuario, doacoes, navigate, atualizar, apiAtiva }) {
+function MinhasDoacoes({ usuario, doacoes, navigate, atualizar, processando }) {
   const minhas = doacoes.filter(d => d.doadorId === usuario.id);
   const [filtro, setFiltro] = useState('TODAS');
   const filtradas = filtro === 'TODAS' ? minhas : minhas.filter(d => d.status === filtro);
@@ -61,11 +60,11 @@ function MinhasDoacoes({ usuario, doacoes, navigate, atualizar, apiAtiva }) {
     <Intro subtitle="DOADOR" name="Minhas doações">HU06–HU09 · Acompanhe as ofertas e os recebimentos</Intro>
     <div className="toolbar"><button className="btn btn--red" onClick={() => navigate('/app/nova-doacao')}>Nova doação</button>
       <select aria-label="Filtrar por status" className="toolbar-select" value={filtro} onChange={e => setFiltro(e.target.value)}>
-        <option value="TODAS">Todos os status</option>{['DISPONIVEL', 'RESERVADA', 'RETIRADA', 'ENTREGUE', 'CANCELADA'].map(s => <option value={s} key={s}>{s}</option>)}
+        <option value="TODAS">Todos os status</option>{['DISPONIVEL', 'RESERVADA', 'RETIRADA', 'ENTREGUE', 'CANCELADA', 'ENCERRADA'].map(s => <option value={s} key={s}>{s}</option>)}
       </select>
     </div>
     {filtradas.length ? <div className="donations-list">{filtradas.map(d => <CartaoDoacao doacao={d} key={d.id}>
-      {!apiAtiva && d.status === 'DISPONIVEL' && <button className="btn btn--outline btn--small" onClick={() => {
+      {d.status === 'DISPONIVEL' && <button className="btn btn--outline btn--small" disabled={processando} onClick={() => {
         if (window.confirm('Deseja cancelar esta doação?')) atualizar(d.id, 'CANCELAR');
       }}>Cancelar</button>}
     </CartaoDoacao>)}</div> : <div className="empty-state"><h3>Nenhuma doação encontrada</h3><p>Quando você publicar alimentos, eles aparecerão aqui.</p><button className="btn btn--red" onClick={() => navigate('/app/nova-doacao')}>Cadastrar primeira doação</button></div>}
@@ -75,9 +74,9 @@ function StepField({ id, label, erro, children }) {
   return <div className="field"><label htmlFor={id}>{label}</label>{children}{erro && <small className="field-error" role="alert">{erro}</small>}</div>;
 }
 function DoacaoWizard({ publicar, navigate, catalogo }) {
-  const categorias = catalogo?.categorias ?? CATEGORIAS;
+  const categorias = catalogo.categorias;
   const [passo, setPasso] = useState(1);
-  const [form, setForm] = useState(() => ({ ...vazio(), categoria: categorias.includes(CATEGORIAS[0]) ? CATEGORIAS[0] : categorias[0] ?? '' }));
+  const [form, setForm] = useState(() => ({ ...vazio(), categoria: categorias[0] ?? '' }));
   const [enviando, setEnviando] = useState(false);
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState('');
@@ -123,8 +122,7 @@ function DoacaoWizard({ publicar, navigate, catalogo }) {
       </div></>}
       {passo === 3 && <><h2>Termo e checklist do doador</h2><div className="checklist">{CHECKS.map(([key, texto]) => <label key={key} className="checklist-item"><input type="checkbox" checked={form.checklist[key]} onChange={e => setForm(o => ({...o, checklist: {...o.checklist, [key]: e.target.checked}}))} /><span>{texto}</span></label>)}</div>
         <button type="button" className="link-button term-link" onClick={() => setMostraTermo(v => !v)}>{mostraTermo ? 'Ocultar termo' : 'Ler termo de responsabilidade'}</button>
-        {mostraTermo && catalogo && <div className="term-panel"><strong>{catalogo.termo.titulo} ({catalogo.termo.versao})</strong><p>{catalogo.termo.conteudo}</p></div>}
-        {mostraTermo && !catalogo && <div className="term-panel"><strong>Termo de responsabilidade — texto provisório</strong><p>O doador declara que as informações fornecidas são verdadeiras e que os alimentos estão próprios para consumo, conservados adequadamente e dentro da validade. O texto jurídico definitivo deverá ser aprovado pela equipe antes de uso em produção.</p></div>}
+        {mostraTermo && <div className="term-panel"><strong>{catalogo.termo.titulo} ({catalogo.termo.versao})</strong><p>{catalogo.termo.conteudo}</p></div>}
         {erros.checklist && <p className="field-error" role="alert">{erros.checklist}</p>}
       </>}
       </div>
@@ -135,12 +133,12 @@ function DoacaoWizard({ publicar, navigate, catalogo }) {
     </form>
   </>;
 }
-function DashboardOng({ usuario, doacoes, navigate, apiAtiva }) {
+function DashboardOng({ usuario, doacoes, navigate }) {
   const minhas = doacoes.filter(d => d.ongId === usuario.id);
   return <>
     <Intro subtitle="ONG" name={`Olá, ${usuario.responsavel}`}>Visão geral das oportunidades de recebimento</Intro>
     <div className="kpi-grid">
-      <Kpi numero={doacoes.filter(d => d.status === 'DISPONIVEL' && (apiAtiva || d.retiradaData >= dataLocal())).length} titulo="Ofertas disponíveis" />
+      <Kpi numero={doacoes.filter(d => d.status === 'DISPONIVEL').length} titulo="Ofertas disponíveis" />
       <Kpi numero={minhas.filter(d => d.status === 'RESERVADA').length} titulo="Minhas reservas" />
       <Kpi numero={minhas.filter(d => d.status === 'RETIRADA').length} titulo="Retiradas" />
       <Kpi numero={minhas.filter(d => d.status === 'ENTREGUE').length} titulo="Entregues" />
@@ -149,27 +147,50 @@ function DashboardOng({ usuario, doacoes, navigate, apiAtiva }) {
     <div className="dashboard-help"><h3>Conectando quem doa a quem precisa</h3><p>Consulte ofertas de alimentos, reserve uma doação e acompanhe suas reservas.</p></div>
   </>;
 }
-function Oportunidades({ doacoes, atualizar, apiAtiva, reservando }) {
+function Oportunidades({ doacoes, atualizar, processando }) {
   const [busca, setBusca] = useState(''); const [categoria, setCategoria] = useState('TODAS');
-  const ofertas = doacoes.filter(d => d.status === 'DISPONIVEL' && (apiAtiva || d.retiradaData >= dataLocal()))
+  const ofertas = doacoes.filter(d => d.status === 'DISPONIVEL')
     .filter(d => (categoria === 'TODAS' || d.categoria === categoria) && `${d.descricao} ${d.doadorNome}`.toLowerCase().includes(busca.toLowerCase()));
   return <><Intro subtitle="ONG" name="Doações disponíveis">Encontre alimentos para sua organização</Intro>
     <div className="toolbar"><input aria-label="Buscar alimentos" placeholder="Buscar alimento ou doador" value={busca} onChange={e => setBusca(e.target.value)} />
-      <select aria-label="Filtrar categoria" className="toolbar-select" value={categoria} onChange={e => setCategoria(e.target.value)}><option value="TODAS">Todas as categorias</option>{(apiAtiva ? [...new Set(doacoes.map(d => d.categoria))].sort() : CATEGORIAS).map(x => <option key={x}>{x}</option>)}</select>
+      <select aria-label="Filtrar categoria" className="toolbar-select" value={categoria} onChange={e => setCategoria(e.target.value)}><option value="TODAS">Todas as categorias</option>{[...new Set(doacoes.map(d => d.categoria))].sort().map(x => <option key={x}>{x}</option>)}</select>
     </div>
-    {ofertas.length ? <div className="donations-list">{ofertas.map(d => <CartaoDoacao key={d.id} doacao={d}><button className="btn btn--red btn--small" disabled={reservando} onClick={() => atualizar(d.id, 'RESERVAR')}>Reservar</button></CartaoDoacao>)}</div> : <div className="empty-state"><h3>Nenhuma oferta disponível</h3><p>Quando um doador publicar alimentos, as oportunidades aparecerão aqui.</p></div>}
+    {ofertas.length ? <div className="donations-list">{ofertas.map(d => <CartaoDoacao key={d.id} doacao={d}><button className="btn btn--red btn--small" disabled={processando} onClick={() => atualizar(d.id, 'RESERVAR')}>Reservar</button></CartaoDoacao>)}</div> : <div className="empty-state"><h3>Nenhuma oferta disponível</h3><p>Quando um doador publicar alimentos, as oportunidades aparecerão aqui.</p></div>}
   </>;
 }
-function ReservasOng({ usuario, doacoes, atualizar, navigate, apiAtiva }) {
+function FormularioRecebimento({ id, atualizar, processando }) {
+  const checks = CHECKS.filter(([chave]) => chave !== 'termo');
+  function confirmar(evento) {
+    evento.preventDefault();
+    const respostas = new FormData(evento.currentTarget);
+    const checklist = Object.fromEntries(checks.map(([chave]) => [chave, respostas.has(chave)]));
+    atualizar(id, 'RECEBER', checklist);
+  }
+  return <details>
+    <summary>Confirmar recebimento</summary>
+    <form onSubmit={confirmar}>
+      <fieldset disabled={processando}>
+        <legend>Checklist de recebimento</legend>
+        {checks.map(([chave, texto]) => <label key={chave} className="checklist-item">
+          <input type="checkbox" name={chave} required />{texto}
+        </label>)}
+        <button type="submit" className="btn btn--red btn--small">Registrar recebimento</button>
+      </fieldset>
+    </form>
+  </details>;
+}
+function ReservasOng({ usuario, doacoes, atualizar, navigate, processando }) {
   const minhas = doacoes.filter(d => d.ongId === usuario.id);
   return <><Intro subtitle="ONG" name="Minhas reservas">Consulte as doações reservadas pela sua organização</Intro>
     {minhas.length ? <div className="donations-list">{minhas.map(d => <CartaoDoacao key={d.id} doacao={d}>
-      {!apiAtiva && d.status === 'RESERVADA' && <button className="btn btn--red btn--small" onClick={() => atualizar(d.id, 'RETIRAR')}>Confirmar retirada</button>}
-      {!apiAtiva && d.status === 'RETIRADA' && <button className="btn btn--red btn--small" onClick={() => atualizar(d.id, 'ENTREGAR')}>Confirmar entrega</button>}
+      {d.status === 'RESERVADA' && d.entrega === 'RETIRADA' &&
+        <button className="btn btn--red btn--small" disabled={processando} onClick={() => atualizar(d.id, 'RETIRAR')}>Confirmar retirada</button>}
+      {(d.status === 'RETIRADA' || (d.status === 'RESERVADA' && d.entrega === 'ENTREGA')) &&
+        <FormularioRecebimento id={d.id} atualizar={atualizar} processando={processando} />}
     </CartaoDoacao>)}</div> : <div className="empty-state"><h3>Você ainda não reservou doações</h3><p>Acesse as oportunidades e escolha uma oferta disponível.</p><button className="btn btn--red" onClick={() => navigate('/app/oportunidades')}>Ver oportunidades</button></div>}
   </>;
 }
-export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, publicar, atualizar, vincularGoogle, apiAtiva = false, catalogo, reservando, carregando, erro, recarregar }) {
+export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, publicar, atualizar, vincularGoogle, catalogo, processando, carregando, erro, recarregar }) {
   const ong = usuario.tipo === 'ONG';
   const links = ong ? [['/app/inicio', 'Início'], ['/app/oportunidades', 'Doações disponíveis'], ['/app/reservas', 'Minhas reservas']] : [['/app/inicio', 'Início'], ['/app/doacoes', 'Minhas doações'], ['/app/nova-doacao', 'Nova doação']];
   return <WorkspaceLayout
@@ -180,14 +201,14 @@ export default function Workspace({ usuario, tema, alternarTema, rota, navegar, 
     acoes={vincularGoogle && <button type="button" className="sidebar-logout" onClick={vincularGoogle}>Vincular Google</button>}
   >
         {erro && <p className="alert alert--error" role="alert">{erro}</p>}
-        {apiAtiva && rota !== '/app/nova-doacao' && <button type="button" className="btn btn--outline btn--small" disabled={carregando || reservando} onClick={recarregar}>Atualizar ofertas</button>}
+        {rota !== '/app/nova-doacao' && <button type="button" className="btn btn--outline btn--small" disabled={carregando || processando} onClick={recarregar}>Atualizar ofertas</button>}
         {carregando ? <p role="status">Carregando doações…</p> : ong ? (
-          rota === '/app/oportunidades' ? <Oportunidades doacoes={doacoes} atualizar={atualizar} apiAtiva={apiAtiva} reservando={reservando} /> :
-          rota === '/app/reservas' ? <ReservasOng usuario={usuario} doacoes={doacoes} atualizar={atualizar} navigate={navegar} apiAtiva={apiAtiva} /> :
-          <DashboardOng usuario={usuario} doacoes={doacoes} navigate={navegar} apiAtiva={apiAtiva} />
+          rota === '/app/oportunidades' ? <Oportunidades doacoes={doacoes} atualizar={atualizar} processando={processando} /> :
+          rota === '/app/reservas' ? <ReservasOng usuario={usuario} doacoes={doacoes} atualizar={atualizar} navigate={navegar} processando={processando} /> :
+          <DashboardOng usuario={usuario} doacoes={doacoes} navigate={navegar} />
         ) : (
-          rota === '/app/doacoes' ? <MinhasDoacoes usuario={usuario} doacoes={doacoes} atualizar={atualizar} navigate={navegar} apiAtiva={apiAtiva} /> :
-          rota === '/app/nova-doacao' ? (apiAtiva && !catalogo ? <button type="button" className="btn btn--outline" onClick={recarregar}>Carregar formulário</button> : <DoacaoWizard key={usuario.id} publicar={publicar} navigate={navegar} catalogo={catalogo} />) :
+          rota === '/app/doacoes' ? <MinhasDoacoes usuario={usuario} doacoes={doacoes} atualizar={atualizar} navigate={navegar} processando={processando} /> :
+          rota === '/app/nova-doacao' ? (!catalogo ? <button type="button" className="btn btn--outline" onClick={recarregar}>Carregar formulário</button> : <DoacaoWizard key={usuario.id} publicar={publicar} navigate={navegar} catalogo={catalogo} />) :
           <DashboardDoador usuario={usuario} doacoes={doacoes} navigate={navegar} />
         )}
   </WorkspaceLayout>;

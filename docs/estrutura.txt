@@ -5,6 +5,7 @@ backend/
     main.py                  FastAPI, CORS, health e erros de validação
     seed.py                  Contas demonstrativas opcionais
     api/auth.py              Cadastro, login, /me e schemas de login
+    api/doacoes.py           Publicação, reserva, cancelamento, retirada e recebimento
     api/google.py            Desafios, login Google e vinculação autenticada
     core/config.py           Variáveis de ambiente
     core/security.py         Argon2id e JWT
@@ -20,15 +21,12 @@ backend/
   requirements.txt
   requirements-dev.txt
   Dockerfile
-frontend/                    Sem alterações nesta entrega
+frontend/
   src/App.jsx                Navegação por hash e estado
   src/components/            Autenticação, formulários e workspace
-  src/services/              Login API e proposta antiga de cadastro
-  src/mock/store.js          Simulação local
-  src/pages/                 CadastroDoador antigo, fora da navegação atual
+  src/services/              Chamadas à API de autenticação, administração e doações
   src/utils/                 Validações e máscaras
   src/assets/
-  tests/mock.test.mjs
   Dockerfile
   nginx.conf
 database/
@@ -36,6 +34,8 @@ database/
   002_credenciais_locais.sql
   003_cadastro_real.sql
   004_google.sql
+  005_painel_administrativo.sql
+  006_publicacao_reserva.sql
   README.md                  Ordem, backup e aplicação em volumes existentes
 docs/
   cadastro_real.md            Contrato atual para integração frontend
@@ -46,6 +46,6 @@ docs/
   banco/                     DBML e dicionário
   diagramas/                 UML/ER conceituais e fluxo de doação proposto
 docker-compose.yml           PostgreSQL + backend + frontend (login API)
-docker-compose.frontend.yml  Frontend demonstrativo independente
+docker-compose.frontend.yml  Frontend separado, requer API acessível
 
-Não há Alembic ou endpoints operacionais de doações. Google exige Client ID e integração frontend; configuração e contrato estão documentados.
+As migrations SQL são mantidas em database/. Google exige Client ID e integração frontend; configuração e contrato estão documentados.

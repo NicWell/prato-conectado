@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,8 +12,26 @@ from app.api.admin import router as admin_router
 from app.api.doacoes import router as doacoes_router
 from app.core.config import settings
 from app.criar_admin import provisionar_administrador
-from app.db.session import SessionLocal
+from app.db.session import SessionLocal, engine
+from app.services.doacoes import encerrar_vencidas
 from app.seed import seed_demo_accounts
+
+
+def processar_expiracoes():
+    with SessionLocal() as db:
+        encerrar_vencidas(db)
+
+
+async def rotina_expiracao(parar):
+    while not parar.is_set():
+        try:
+            await asyncio.to_thread(processar_expiracoes)
+        except Exception:
+            logging.getLogger(__name__).exception("Falha ao encerrar doa??es vencidas.")
+        try:
+            await asyncio.wait_for(parar.wait(), timeout=60)
+        except TimeoutError:
+            pass
 
 
 @asynccontextmanager
@@ -21,7 +41,17 @@ async def lifespan(app: FastAPI):
         db.execute(text("SELECT 1"))
         provisionar_administrador(db)
         seed_demo_accounts(db)
-    yield
+    if engine.dialect.name != "postgresql":
+        yield
+        return
+
+    parar = asyncio.Event()
+    tarefa = asyncio.create_task(rotina_expiracao(parar))
+    try:
+        yield
+    finally:
+        parar.set()
+        await tarefa
 
 
 app = FastAPI(title="Prato Conectado — Autenticação e Cadastro", version="0.3.0", lifespan=lifespan)
