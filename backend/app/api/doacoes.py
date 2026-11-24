@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.auth import current_user, get_user_view
 from app.db.session import get_db
 from app.models import Usuario
-from app.schemas.doacoes import ChecklistOng, PublicacaoDoacao
+from app.schemas.doacoes import PublicacaoDoacao, RecebimentoDoacao
 from app.services import doacoes
 
 router = APIRouter(prefix="/api/doacoes", tags=["Doações"])
@@ -50,7 +50,7 @@ def retirar(doacao_id: UUID, usuario: Usuario = Depends(current_user), db: Sessi
 
 
 @router.post("/{doacao_id}/recebimento")
-def receber(doacao_id: UUID, checklist: ChecklistOng, usuario: Usuario = Depends(current_user),
+def receber(doacao_id: UUID, checklist: RecebimentoDoacao, usuario: Usuario = Depends(current_user),
             db: Session = Depends(get_db)):
     ong = doacoes.perfil_operacional(db, usuario, get_user_view(db, usuario), ("ONG",))
     return doacoes.transicionar(db, ong, usuario, doacao_id, "ENTREGUE", checklist)

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cnpjValido, cpfValido, filtrarOfertas, validarDoacao, dataMaisDias } from '../src/utils/formularios.js';
+import { CAMPOS_VOLUNTARIO, validarVoluntario } from '../src/utils/voluntarios.js';
 import { validarFormularioCadastro, FORM_INICIAL } from '../src/utils/cadastro.js';
 import { montarCadastro, montarPerfil, interpretarErro } from '../src/services/auth.js';
 const base = {
@@ -85,4 +86,27 @@ test('filtros combinam categoria, quantidade na mesma unidade e validade inclusi
   const filtros = { categoria: 'Frutas', quantidade: '2.5', unidade: 'kg', validade: '2026-11-26', busca: ' FEIRA ' };
   assert.deepEqual(filtrarOfertas(ofertas, filtros), [oferta]);
   assert.deepEqual(filtrarOfertas(ofertas, { ...filtros, quantidade: '' }), ofertas.slice(0, 3));
+});
+
+test('máscaras do voluntário limitam telefone e CEP', () => {
+  const telefone = CAMPOS_VOLUNTARIO.find(campo => campo.nome === 'telefone');
+  const cep = CAMPOS_VOLUNTARIO.find(campo => campo.nome === 'cep');
+  assert.equal(telefone.mascara('8233331234'), '(82) 3333-1234');
+  assert.equal(telefone.mascara('8299999123499'), '(82) 99999-1234');
+  assert.equal(cep.mascara('5730000099'), '57300-000');
+});
+
+test('cadastro de voluntário valida contato, endereço e limites por campo', () => {
+  const dados = {
+    nome: 'Ana da Silva', telefone: '(82) 99999-1234', email: '',
+    logradouro: 'Rua das Flores', numero: 's/n', bairro: 'Centro',
+    cidade: 'Arapiraca', uf: 'AL', cep: '57300-000',
+  };
+  assert.deepEqual(validarVoluntario(dados), {});
+  const erros = validarVoluntario({
+    ...dados, telefone: '(82) 99', cep: '57300-00', uf: 'XX', email: 'invalido',
+    nome: '', logradouro: 'a'.repeat(181), numero: '', bairro: '', cidade: '',
+  });
+  assert.deepEqual(Object.keys(erros).sort(),
+    ['bairro', 'cep', 'cidade', 'email', 'logradouro', 'nome', 'numero', 'telefone', 'uf']);
 });

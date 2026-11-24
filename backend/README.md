@@ -17,6 +17,7 @@ Administração: `GET /api/admin/cadastros`, `GET /api/admin/cadastros/{perfil}/
 - `POST /api/doacoes/{id}/cancelamento` — o doador proprietário pode cancelar uma oferta disponível dentro do prazo.
 - `POST /api/doacoes/{id}/retirada` — a ONG que reservou confirma retirada dentro da janela, na modalidade de retirada.
 - `POST /api/doacoes/{id}/recebimento` — a ONG que reservou confirma recebimento com `temperatura`, `embalagem`, `validade` e `conservacao` iguais a `true`. Na entrega pelo doador, o recebimento ocorre dentro da janela. Na retirada, ocorre depois da retirada e antes do vencimento do alimento.
+- `GET /api/voluntarios` e `POST /api/voluntarios` — ONG aprovada lista e cadastra seus próprios voluntários. O recebimento na modalidade de retirada aceita `voluntario_id` opcional de um voluntário ativo da ONG da reserva.
 - `GET /api/necessidades` — lista necessidades ativas e inativas da ONG aprovada autenticada e as categorias ativas.
 - `POST /api/necessidades` — cadastra uma necessidade com `categoria`, `quantidade`, `unidade` e `observacao` opcional.
 - `PUT /api/necessidades/{id}` — atualiza uma necessidade ativa da própria ONG.
@@ -58,7 +59,7 @@ $login = Invoke-RestMethod -Uri http://localhost:8000/api/auth/login -Method Pos
 Invoke-RestMethod -Uri http://localhost:8000/api/auth/me -Headers @{ Authorization = "Bearer $($login.access_token)" }
 ```
 
-**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Volumes existentes exigem as migrations pendentes até 006 antes de iniciar o backend. Veja [backup e aplicação](../database/README.md). Não remova volumes com dados.
+**Atenção**: A seed é idempotente; não sobrescreve senhas já cadastradas. Scripts em `/docker-entrypoint-initdb.d` só executam na **primeira criação de volume vazio**. Volumes existentes exigem as migrations pendentes até 007 antes de iniciar o backend. Veja [backup e aplicação](../database/README.md). Não remova volumes com dados.
 
 ### Testes automatizados
 
@@ -68,7 +69,7 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-Sem configuração adicional, os testes usam SQLite em memória. Para validar o SQL real, defina `TEST_DATABASE_URL` com URL `postgresql+psycopg://...` de um **banco descartável e isolado**. Cada teste cria/remove um schema `teste_<uuid>` próprio e aplica os seis scripts. A suíte cobre cadastro, validações, duplicidade, rollback e regressão do login. Testes Google assinam tokens com chave de teste e substituem somente o download dos certificados, mantendo validação criptográfica real. Não usam Client ID real nem dependem de rede. Testes exclusivos de migration/concorrência PostgreSQL são pulados em SQLite.
+Sem configuração adicional, os testes usam SQLite em memória. Para validar o SQL real, defina `TEST_DATABASE_URL` com URL `postgresql+psycopg://...` de um **banco descartável e isolado**. Cada teste cria/remove um schema `teste_<uuid>` próprio e aplica os sete scripts. A suíte cobre cadastro, validações, duplicidade, rollback e regressão do login. Testes Google assinam tokens com chave de teste e substituem somente o download dos certificados, mantendo validação criptográfica real. Não usam Client ID real nem dependem de rede. Testes exclusivos de migration/concorrência PostgreSQL são pulados em SQLite.
 
 Models: `app/models/entities.py`; schema de cadastro: `app/schemas/cadastro.py`; transação: `app/services/cadastro.py`; rotas: `app/api/auth.py`. Os schemas antigos de login permanecem no módulo de autenticação.
 

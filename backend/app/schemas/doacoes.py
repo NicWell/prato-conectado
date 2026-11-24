@@ -41,3 +41,7 @@ class ChecklistOng(BaseModel):
     embalagem: Literal[True]
     validade: Literal[True]
     conservacao: Literal[True]
+
+
+class RecebimentoDoacao(ChecklistOng):
+    voluntario_id: UUID | None = None

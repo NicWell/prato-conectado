@@ -9,39 +9,16 @@ Texto = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 UFS = set("AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split())
 
 
-class PerfilPayload(BaseModel):
+class EnderecoContato(BaseModel):
     model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
 
-    tipo: Literal["ONG", "DOADOR"]
-    perfil: Literal["ONG", "EMPRESA", "PESSOA_FISICA"]
-    nome: Texto = Field(max_length=180)
-    cnpj: str | None = Field(default=None, max_length=18)
-    cpf: str | None = Field(default=None, max_length=14)
-    email_contato: EmailStr = Field(max_length=255)
     telefone: str = Field(max_length=25)
     logradouro: Texto = Field(max_length=180)
     numero: Texto = Field(max_length=15)
-    complemento: Texto | None = Field(default=None, max_length=120)
     bairro: Texto = Field(max_length=100)
     cidade: Texto = Field(max_length=120)
     uf: str = Field(min_length=2, max_length=2)
     cep: str = Field(max_length=9)
-    capacidade_atendimento: int | None = Field(default=None, gt=0, le=2147483647, strict=True)
-
-    @field_validator("email_contato", mode="before")
-    @classmethod
-    def normalizar_email(cls, valor):
-        return valor.strip().lower() if isinstance(valor, str) else valor
-
-    @field_validator("cnpj")
-    @classmethod
-    def validar_cnpj(cls, valor):
-        return normalizar_cnpj(valor) if valor is not None else None
-
-    @field_validator("cpf")
-    @classmethod
-    def validar_cpf(cls, valor):
-        return normalizar_cpf(valor) if valor is not None else None
 
     @field_validator("uf")
     @classmethod
@@ -69,6 +46,32 @@ class PerfilPayload(BaseModel):
         if not re.fullmatch(r"[1-9][0-9]{9,10}", numero):
             raise ValueError("Informe telefone brasileiro com DDD.")
         return numero
+
+
+class PerfilPayload(EnderecoContato):
+    tipo: Literal["ONG", "DOADOR"]
+    perfil: Literal["ONG", "EMPRESA", "PESSOA_FISICA"]
+    nome: Texto = Field(max_length=180)
+    cnpj: str | None = Field(default=None, max_length=18)
+    cpf: str | None = Field(default=None, max_length=14)
+    email_contato: EmailStr = Field(max_length=255)
+    complemento: Texto | None = Field(default=None, max_length=120)
+    capacidade_atendimento: int | None = Field(default=None, gt=0, le=2147483647, strict=True)
+
+    @field_validator("email_contato", mode="before")
+    @classmethod
+    def normalizar_email(cls, valor):
+        return valor.strip().lower() if isinstance(valor, str) else valor
+
+    @field_validator("cnpj")
+    @classmethod
+    def validar_cnpj(cls, valor):
+        return normalizar_cnpj(valor) if valor is not None else None
+
+    @field_validator("cpf")
+    @classmethod
+    def validar_cpf(cls, valor):
+        return normalizar_cpf(valor) if valor is not None else None
 
     @model_validator(mode="after")
     def validar_perfil(self):

@@ -34,6 +34,7 @@ export const formatarTelefone = (v) => {
   if (x.length <= 10) return `(${x.slice(0, 2)}) ${x.slice(2, 6)}-${x.slice(6)}`;
   return `(${x.slice(0, 2)}) ${x.slice(2, 7)}-${x.slice(7)}`;
 };
+export const formatarCep = (v) => somenteDigitos(v).slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2');
 export const telefoneValido = (v) => /^[1-9]\d{9,10}$/.test(somenteDigitos(v));
 export const formatarData = (value) => {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '—';

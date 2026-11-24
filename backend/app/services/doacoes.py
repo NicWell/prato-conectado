@@ -40,7 +40,8 @@ def listar(db, cadastro, tipo):
     return [dict(row) for row in db.execute(text("""
         SELECT d.id, COALESCE(d.doador_id, d.doador_pf_id) AS "doadorId",
                s.ong_id AS "ongId", COALESCE(o.nome, pf.nome) AS "doadorNome",
-               ong.nome AS "ongNome", d.status, i.descricao, i.quantidade, i.unidade,
+               ong.nome AS "ongNome",
+               CASE WHEN :tipo = 'ONG' THEN v.nome END AS "voluntarioNome", d.status, i.descricao, i.quantidade, i.unidade,
                c.nome AS categoria, d.modalidade AS entrega, i.validade_em,
                d.inicio_retirada, d.fim_retirada
         FROM doacoes d
@@ -52,6 +53,7 @@ def listar(db, cadastro, tipo):
         JOIN categorias_alimento c ON c.id = i.categoria_id
         LEFT JOIN solicitacoes_doacao s ON s.doacao_id = d.id AND s.status = 'ACEITA'
         LEFT JOIN organizacoes ong ON ong.id = s.ong_id
+        LEFT JOIN voluntarios v ON v.id = s.voluntario_id AND v.ong_id = s.ong_id
         WHERE (:tipo = 'DOADOR' AND (d.doador_id = :id OR d.doador_pf_id = :id))
            OR (:tipo = 'ONG' AND (s.ong_id = :id OR (
                d.status = 'DISPONIVEL' AND d.fim_retirada > now()
@@ -210,11 +212,26 @@ def transicionar(db, cadastro, usuario, doacao_id, destino, checklist=None):
             raise HTTPException(409, "A validade do alimento terminou.")
 
     if checklist is not None:
+        if checklist.voluntario_id is not None:
+            if oferta.modalidade != "RETIRADA":
+                raise HTTPException(422, "A doação não prevê coleta pela ONG.")
+            parametros = {**valores, "voluntario_id": checklist.voluntario_id}
+            voluntario = db.scalar(text("""
+                SELECT id FROM voluntarios
+                WHERE id = :voluntario_id AND ong_id = :perfil_id AND ativo
+                FOR SHARE
+            """), parametros)
+            if voluntario is None:
+                raise HTTPException(422, "Selecione um voluntário ativo da sua ONG.")
+            db.execute(text("""
+                UPDATE solicitacoes_doacao SET voluntario_id = :voluntario_id
+                WHERE doacao_id = :id AND ong_id = :perfil_id AND status = 'ACEITA'
+            """), parametros)
         db.execute(text("""
             INSERT INTO triagens_doacao (doacao_id, organizacao_id, preenchido_por_id,
                                         etapa, resultado, respostas)
             VALUES (:id, :perfil_id, :usuario_id, 'ONG_RECEBIMENTO', 'APTA', CAST(:respostas AS jsonb))
-        """), {**valores, "respostas": json.dumps(checklist.model_dump())})
+        """), {**valores, "respostas": json.dumps(checklist.model_dump(exclude={"voluntario_id"}))})
     db.execute(text("""
         UPDATE doacoes SET status = :destino, atualizado_em = clock_timestamp() WHERE id = :id
     """), valores)
