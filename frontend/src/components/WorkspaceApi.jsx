@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { catalogoDoacoesApi, listarDoacoesApi, publicarDoacaoApi, atualizarDoacaoApi } from '../services/doacoes.js';
 import { desativarNecessidade, listarNecessidades, salvarNecessidade } from '../services/necessidades.js';
+import { cadastrarVoluntario, listarVoluntarios } from '../services/voluntarios.js';
 import Workspace from './Workspace.jsx';
 
 export default function WorkspaceApi(props) {
   const { rota, navegar } = props;
   const novaDoacao = rota === '/app/nova-doacao' && props.usuario.tipo === 'DOADOR';
   const paginaNecessidades = rota === '/app/necessidades' && props.usuario.tipo === 'ONG';
+  const paginaVoluntarios = rota === '/app/voluntarios' && props.usuario.tipo === 'ONG';
   const [consulta, setConsulta] = useState(0);
   const [resultado, setResultado] = useState(null);
   const [erro, setErro] = useState('');
@@ -15,7 +17,11 @@ export default function WorkspaceApi(props) {
 
   useEffect(() => {
     let ativo = true;
-    const buscar = paginaNecessidades ? listarNecessidades : novaDoacao ? catalogoDoacoesApi : listarDoacoesApi;
+    const buscar = {
+      '/app/voluntarios': paginaVoluntarios ? listarVoluntarios : listarDoacoesApi,
+      '/app/necessidades': paginaNecessidades ? listarNecessidades : listarDoacoesApi,
+      '/app/nova-doacao': novaDoacao ? catalogoDoacoesApi : listarDoacoesApi,
+    }[rota] ?? listarDoacoesApi;
     buscar().then(resultado => {
       if (ativo) setResultado(resultado);
     }).catch(falha => {
@@ -24,7 +30,7 @@ export default function WorkspaceApi(props) {
       if (ativo) setCarregando(false);
     });
     return () => { ativo = false; };
-  }, [novaDoacao, paginaNecessidades, rota, consulta]);
+  }, [novaDoacao, paginaNecessidades, paginaVoluntarios, rota, consulta]);
 
   function recarregar() {
     setCarregando(true);
@@ -48,7 +54,12 @@ export default function WorkspaceApi(props) {
 
   return <Workspace
     {...props}
-    doacoes={Array.isArray(resultado) ? resultado : []}
+    doacoes={!paginaVoluntarios && Array.isArray(resultado) ? resultado : []}
+    voluntarios={paginaVoluntarios ? resultado : null}
+    cadastrarVoluntario={async dados => {
+      await cadastrarVoluntario(dados);
+      recarregar();
+    }}
     necessidades={paginaNecessidades ? resultado : null}
     salvarNecessidade={async (id, dados) => {
       await salvarNecessidade(id, dados);

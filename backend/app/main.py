@@ -11,6 +11,7 @@ from app.api.google import router as google_router
 from app.api.admin import router as admin_router
 from app.api.doacoes import router as doacoes_router
 from app.api.necessidades import router as necessidades_router
+from app.api.voluntarios import router as voluntarios_router
 from app.core.config import settings
 from app.criar_admin import provisionar_administrador
 from app.db.session import SessionLocal, engine
@@ -77,6 +78,7 @@ app.include_router(google_router)
 app.include_router(admin_router)
 app.include_router(doacoes_router)
 app.include_router(necessidades_router)
+app.include_router(voluntarios_router)
 
 
 @app.get("/health", tags=["Infraestrutura"])

@@ -6,15 +6,16 @@ Consulte os contratos de [cadastro](cadastro_real.md), [login](integracao_login.
 
 ## Ponto de partida — 24/11/2026
 
-- A `main` remota está em `5a15488` (PR #14), validado pelo usuário. Já inclui autenticação por senha e Google, cadastro de ONG e doador (empresa ou pessoa física), painel administrativo e o fluxo de doação sem mock. Publicação, reserva, cancelamento, retirada, recebimento com checklist e encerramento automático usam o PostgreSQL.
-- A HU08 está implementada e publicada na branch `feat/hu08-necessidades-ong` (`2179a44`), com merge na `main` pendente na data deste registro. ONGs aprovadas cadastram, editam e desativam suas próprias necessidades. Os registros inativos continuam visíveis para a ONG responsável. A busca combina categoria, quantidade mínima na mesma unidade e validade mínima inclusiva. As necessidades usam a tabela existente e os filtros são aplicados no React sobre ofertas retornadas pela API.
+- O PR #14 (`5a15488`) entrou na `main` e foi validado pelo usuário. A aplicação inclui autenticação por senha e Google, cadastro de ONG e doador (empresa ou pessoa física), painel administrativo e o fluxo de doação sem mock. Publicação, reserva, cancelamento, retirada, recebimento com checklist e encerramento automático usam o PostgreSQL.
+- A HU08 está implementada e publicada na branch `feat/hu08-necessidades-ong` e foi integrada à `main` pelo PR #15 (`d6b971e`). ONGs aprovadas cadastram, editam e desativam suas próprias necessidades. Os registros inativos continuam visíveis para a ONG responsável. A busca combina categoria, quantidade mínima na mesma unidade e validade mínima inclusiva. As necessidades usam a tabela existente e os filtros são aplicados no React sobre ofertas retornadas pela API.
 - A HU08 passou em 110 testes de backend com PostgreSQL isolado e 24 testes de frontend, além de lint e build. O Docker local foi reconstruído, as rotas da HU08 estavam disponíveis e o usuário confirmou que o teste manual funcionou. A entrega reaproveita as migrations até 006. O aceite acadêmico formal deve ser registrado pela equipe.
+
+- Na branch `feat/hu03-cadastro-voluntarios`, a ONG pode cadastrar e listar voluntários e escolher um deles ao confirmar o recebimento de uma coleta. O vínculo opcional fica na reserva via migration 007. O backend tem 111 testes aprovados com PostgreSQL isolado e o frontend, 24.
 
 ## Próximas entregas
 
-1. Integrar a HU08 à `main` e confirmar o merge antes de iniciar a próxima branch.
-2. HU05 — implementar envio privado e revisão de documentos no painel administrativo existente.
-3. HU03 — cadastrar voluntários com vínculo a uma ONG existente.
+1. Validar a HU03 no navegador, incluindo recebimento com e sem voluntário.
+2. Retomar a HU05 quando a equipe voltar ao envio e à revisão privada de documentos.
 
 A validação com uma conta Google real depende de Client ID e origem autorizada (HU01). A recuperação de senha pela API segue pendente.
 
@@ -25,7 +26,7 @@ A validação com uma conta Google real depende de Client ID e origem autorizada
 | [`diagramas/diagrama_classes.md`](diagramas/diagrama_classes.md) | Diagrama UML conceitual editável no VS Code |
 | [`diagramas/diagrama_banco.md`](diagramas/diagrama_banco.md) | Diagrama entidade-relacionamento (Mermaid) |
 | [`banco/modelo_banco.dbml`](banco/modelo_banco.dbml) | Modelo relacional DBML editável / importável |
-| [`../database/schema_postgresql.sql`](../database/schema_postgresql.sql) | Baseline histórico; aplicar também migrations 002–006 |
+| [`../database/schema_postgresql.sql`](../database/schema_postgresql.sql) | Baseline histórico; aplicar também migrations 002–007 |
 | [`banco/dicionario_dados.md`](banco/dicionario_dados.md) | Tabelas, colunas e tipos exatos |
 | [`requisitos_e_rastreabilidade.md`](requisitos_e_rastreabilidade.md) | Vinculação de cada HU com tabelas e critérios de aceite |
 | [`regras_de_negocio.md`](regras_de_negocio.md) | Validações de domínio e questões pendentes |
@@ -51,6 +52,7 @@ psql -U postgres -d prato_conectado -f database/003_cadastro_real.sql
 psql -U postgres -d prato_conectado -f database/004_google.sql
 psql -U postgres -d prato_conectado -f database/005_painel_administrativo.sql
 psql -U postgres -d prato_conectado -f database/006_publicacao_reserva.sql
+psql -U postgres -d prato_conectado -f database/007_voluntario_reserva.sql
 ```
 
 Execute esses comandos na raiz e somente em banco vazio. Para banco existente, siga [migrations e backup](../database/README.md). Não é necessário criar banco para visualizar diagramas.

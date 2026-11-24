@@ -212,3 +212,43 @@ def test_ong_gerencia_apenas_as_proprias_necessidades(client, db):
     assert client.put(item, headers=ong, json=dados).status_code == 404
     atual = client.get(rota, headers=ong).json()["itens"][0]
     assert (atual["id"], atual["quantidade"], atual["observacao"], atual["ativa"]) == (identificador, 4, None, False)
+
+
+def test_voluntario_da_coleta_fica_na_reserva_da_propria_ong(client, db):
+    doador, _ = conta(db, "doador", "DOADOR")
+    ong, _ = conta(db, "ong", "ONG")
+    outra, _ = conta(db, "outra", "ONG")
+    voluntarios = "/api/voluntarios"
+    dados = {
+        "nome": "Pessoa voluntária", "telefone": "(82) 99999-1234", "logradouro": "Rua A",
+        "numero": "10", "bairro": "Centro", "cidade": "Arapiraca", "uf": "al", "cep": "57300-000",
+    }
+    assert client.post(voluntarios, headers=doador, json=dados).status_code == 403
+    assert client.post(voluntarios, headers=ong, json={**dados, "cep": "x"}).status_code == 422
+    propria = client.post(voluntarios, headers=ong, json=dados)
+    assert propria.status_code == 201, propria.text
+    voluntario_id = propria.json()["id"]
+    terceiro_id = client.post(voluntarios, headers=outra, json=dados).json()["id"]
+    assert [v["id"] for v in client.get(voluntarios, headers=ong).json()] == [voluntario_id]
+
+    doacao = client.post(ROTA, headers=doador, json=publicacao(client, doador)).json()["id"]
+    base = f"{ROTA}/{doacao}"
+    assert client.post(f"{base}/reserva", headers=ong).status_code == 200
+    db.execute(text("UPDATE doacoes SET inicio_retirada = now() - interval '1 hour' WHERE id = :id"),
+               {"id": UUID(doacao)})
+    db.commit()
+    assert client.post(f"{base}/retirada", headers=ong).status_code == 200
+    checklist = {chave: True for chave in ("temperatura", "embalagem", "validade", "conservacao")}
+    assert client.post(f"{base}/recebimento", headers=ong,
+                       json={**checklist, "voluntario_id": terceiro_id}).status_code == 422
+    assert client.get(ROTA, headers=ong).json()[0]["status"] == "RETIRADA"
+    recebida = client.post(f"{base}/recebimento", headers=ong,
+                           json={**checklist, "voluntario_id": voluntario_id})
+    assert recebida.status_code == 200, recebida.text
+    assert client.get(ROTA, headers=ong).json()[0]["voluntarioNome"] == dados["nome"]
+    assert client.get(ROTA, headers=doador).json()[0]["voluntarioNome"] is None
+    assert db.scalar(text("SELECT voluntario_id FROM solicitacoes_doacao WHERE doacao_id = :id"),
+                     {"id": UUID(doacao)}) == UUID(voluntario_id)
+    assert db.scalar(text("""
+        SELECT respostas FROM triagens_doacao WHERE doacao_id = :id AND etapa = 'ONG_RECEBIMENTO'
+    """), {"id": UUID(doacao)}) == checklist

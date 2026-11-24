@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import NecessidadesOng from './NecessidadesOng.jsx';
+import VoluntariosOng from './VoluntariosOng.jsx';
+import { listarVoluntarios } from '../services/voluntarios.js';
 import WorkspaceLayout from './WorkspaceLayout.jsx';
 import { dataLocal, dataMaisDias, filtrarOfertas, formatarData, UNIDADES_ALIMENTO, validarDoacao } from '../utils/formularios.js';
 
@@ -28,6 +30,7 @@ function CartaoDoacao({ doacao, children }) {
       <h3>{doacao.descricao}</h3>
       <p>{doacao.quantidade} {doacao.unidade} · validade {formatarData(doacao.validade)} · {doacao.entrega === 'RETIRADA' ? 'retirada pela ONG' : 'entrega pelo doador'} {formatarData(doacao.retiradaData)}, {doacao.retiradaInicio}–{doacao.retiradaFim}</p>
       <small>{doacao.categoria} · Doador: {doacao.doadorNome}{doacao.ongNome ? ` · ONG: ${doacao.ongNome}` : ''}</small>
+      {doacao.voluntarioNome && <p>Voluntário da coleta: {doacao.voluntarioNome}</p>}
     </div>
     <div className="donation-card__actions"><Etiqueta status={doacao.status}/>{children}</div>
   </article>;
@@ -170,12 +173,14 @@ function Oportunidades({ doacoes, atualizar, processando }) {
     {ofertas.length ? <div className="donations-list">{ofertas.map(d => <CartaoDoacao key={d.id} doacao={d}><button className="btn btn--red btn--small" disabled={processando} onClick={() => atualizar(d.id, 'RESERVAR')}>Reservar</button></CartaoDoacao>)}</div> : <div className="empty-state"><h3>Nenhuma oferta encontrada</h3><p>{disponiveis.length ? 'Ajuste os filtros para ver mais ofertas.' : 'As ofertas publicadas aparecerão aqui.'}</p></div>}
   </>;
 }
-function FormularioRecebimento({ id, atualizar, processando }) {
+function FormularioRecebimento({ id, retirada, atualizar, processando, voluntarios, erroVoluntarios }) {
   const checks = CHECKS.filter(([chave]) => chave !== 'termo');
   function confirmar(evento) {
     evento.preventDefault();
     const respostas = new FormData(evento.currentTarget);
     const checklist = Object.fromEntries(checks.map(([chave]) => [chave, respostas.has(chave)]));
+    const voluntario = respostas.get('voluntario_id');
+    if (voluntario) checklist.voluntario_id = voluntario;
     atualizar(id, 'RECEBER', checklist);
   }
   return <details>
@@ -186,25 +191,43 @@ function FormularioRecebimento({ id, atualizar, processando }) {
         {checks.map(([chave, texto]) => <label key={chave} className="checklist-item">
           <input type="checkbox" name={chave} required />{texto}
         </label>)}
-        <button type="submit" className="btn btn--red btn--small">Registrar recebimento</button>
+        {retirada && <label className="field">Voluntário da coleta (opcional)
+          <select name="voluntario_id" disabled={!voluntarios}>
+            <option value="">Sem voluntário</option>
+            {voluntarios?.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}
+          </select>
+        </label>}
+        {erroVoluntarios && <p role="alert">{erroVoluntarios}</p>}
+        <button type="submit" className="btn btn--red btn--small" disabled={retirada && !voluntarios && !erroVoluntarios}>Registrar recebimento</button>
       </fieldset>
     </form>
   </details>;
 }
 function ReservasOng({ usuario, doacoes, atualizar, navigate, processando }) {
   const minhas = doacoes.filter(d => d.ongId === usuario.id);
+  const temColeta = minhas.some(doacao => doacao.status === 'RETIRADA' && doacao.entrega === 'RETIRADA');
+  const [voluntarios, setVoluntarios] = useState(null);
+  const [erroVoluntarios, setErroVoluntarios] = useState('');
+  useEffect(() => {
+    if (!temColeta) return;
+    let ativo = true;
+    listarVoluntarios()
+      .then(itens => { if (ativo) setVoluntarios(itens.filter(item => item.ativo)); })
+      .catch(erro => { if (ativo) setErroVoluntarios(erro.message); });
+    return () => { ativo = false; };
+  }, [temColeta]);
   return <><Intro subtitle="ONG" name="Minhas reservas">Consulte as doações reservadas pela sua organização</Intro>
     {minhas.length ? <div className="donations-list">{minhas.map(d => <CartaoDoacao key={d.id} doacao={d}>
       {d.status === 'RESERVADA' && d.entrega === 'RETIRADA' &&
         <button className="btn btn--red btn--small" disabled={processando} onClick={() => atualizar(d.id, 'RETIRAR')}>Confirmar retirada</button>}
       {(d.status === 'RETIRADA' || (d.status === 'RESERVADA' && d.entrega === 'ENTREGA')) &&
-        <FormularioRecebimento id={d.id} atualizar={atualizar} processando={processando} />}
+        <FormularioRecebimento id={d.id} retirada={d.entrega === 'RETIRADA'} voluntarios={voluntarios} erroVoluntarios={erroVoluntarios} atualizar={atualizar} processando={processando} />}
     </CartaoDoacao>)}</div> : <div className="empty-state"><h3>Você ainda não reservou doações</h3><p>Acesse as oportunidades e escolha uma oferta disponível.</p><button className="btn btn--red" onClick={() => navigate('/app/oportunidades')}>Ver oportunidades</button></div>}
   </>;
 }
-export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, necessidades, salvarNecessidade, desativarNecessidade, publicar, atualizar, vincularGoogle, catalogo, processando, carregando, erro, recarregar }) {
+export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, necessidades, voluntarios, cadastrarVoluntario, salvarNecessidade, desativarNecessidade, publicar, atualizar, vincularGoogle, catalogo, processando, carregando, erro, recarregar }) {
   const ong = usuario.tipo === 'ONG';
-  const links = ong ? [['/app/inicio', 'Início'], ['/app/oportunidades', 'Doações disponíveis'], ['/app/reservas', 'Minhas reservas'], ['/app/necessidades', 'Necessidades']] : [['/app/inicio', 'Início'], ['/app/doacoes', 'Minhas doações'], ['/app/nova-doacao', 'Nova doação']];
+  const links = ong ? [['/app/inicio', 'Início'], ['/app/oportunidades', 'Doações disponíveis'], ['/app/reservas', 'Minhas reservas'], ['/app/necessidades', 'Necessidades'], ['/app/voluntarios', 'Voluntários']] : [['/app/inicio', 'Início'], ['/app/doacoes', 'Minhas doações'], ['/app/nova-doacao', 'Nova doação']];
   return <WorkspaceLayout
     tema={tema} alternarTema={alternarTema} sair={sair}
     perfil={`${ong ? 'ONG' : 'DOADOR'} · ${usuario.nome}`}
@@ -213,8 +236,11 @@ export default function Workspace({ usuario, tema, alternarTema, rota, navegar, 
     acoes={vincularGoogle && <button type="button" className="sidebar-logout" onClick={vincularGoogle}>Vincular Google</button>}
   >
         {erro && <p className="alert alert--error" role="alert">{erro}</p>}
-        {!['/app/nova-doacao', '/app/necessidades'].includes(rota) && <button type="button" className="btn btn--outline btn--small" disabled={carregando || processando} onClick={recarregar}>Atualizar ofertas</button>}
+        {!['/app/nova-doacao', '/app/necessidades', '/app/voluntarios'].includes(rota) && <button type="button" className="btn btn--outline btn--small" disabled={carregando || processando} onClick={recarregar}>Atualizar ofertas</button>}
         {carregando ? <p role="status">Carregando…</p> : ong ? (
+          rota === '/app/voluntarios' ? (voluntarios
+            ? <VoluntariosOng voluntarios={voluntarios} cadastrar={cadastrarVoluntario} />
+            : <button type="button" className="btn btn--outline" onClick={recarregar}>Tentar novamente</button>) :
           rota === '/app/necessidades' ? (necessidades
             ? <NecessidadesOng dados={necessidades} salvar={salvarNecessidade} desativar={desativarNecessidade} />
             : <button type="button" className="btn btn--outline" onClick={recarregar}>Tentar novamente</button>) :

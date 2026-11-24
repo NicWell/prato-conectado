@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import logoPratoConectado from '../assets/logo-prato-conectado.png';
-import { formatarCpf, formatarTelefone, formatarCnpj } from '../utils/formularios.js';
+import { formatarCep, formatarCpf, formatarTelefone, formatarCnpj } from '../utils/formularios.js';
 import { FORM_INICIAL, ESTADOS, validarFormularioCadastro } from '../utils/cadastro.js';
 import GoogleIdentityButton from './GoogleIdentityButton.jsx';
 
@@ -68,7 +68,7 @@ function CadastroForm({ theme, toggleTheme, onSubmit, navigate, perfilGoogle = f
   const isOng = form.tipo === 'ONG'; const isEmpresa = !isOng && form.perfil === 'EMPRESA';
   const pessoa = !isOng && !isEmpresa;
   function alterar(id, value) {
-    const novo = id === 'cpf' ? formatarCpf(value) : id === 'cnpj' ? formatarCnpj(value) : id === 'telefone' ? formatarTelefone(value) : id === 'uf' ? value.toUpperCase() : id === 'cep' ? value.replace(/\D/g, '').slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2') : value;
+    const novo = id === 'cpf' ? formatarCpf(value) : id === 'cnpj' ? formatarCnpj(value) : id === 'telefone' ? formatarTelefone(value) : id === 'uf' ? value.toUpperCase() : id === 'cep' ? formatarCep(value) : value;
     setForm(old => ({ ...old, [id]: novo })); setErros(old => ({ ...old, [id]: '' })); setErroGeral('');
   }
   function campo(id, label, extra = {}) { return <Field id={id} label={label} value={form[id]} onChange={e => alterar(id, e.target.value)} error={erros[id]} {...extra} />; }

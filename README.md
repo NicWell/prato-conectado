@@ -11,7 +11,8 @@ Monorepositório: `frontend/` (React/Vite), `backend/` (FastAPI), `database/` (P
 - Login Google, vinculação explícita e conclusão de perfil estão implementados no backend e integrados ao React/GIS. Configure `GOOGLE_CLIENT_ID`, repassado ao build como `VITE_GOOGLE_CLIENT_ID`: [contrato Google](docs/integracao_google.md).
 - Painel administrativo integrado à API: conta exclusiva da equipe, consulta de ONGs/doadores, aprovação e reprovação justificada, histórico e notificação interna. Veja [configuração e criação da conta](docs/painel_administrativo.md). Revisão documental ainda pendente.
 - Doadores aprovados (empresa ou PF) publicam ofertas e ONGs aprovadas reservam pelo PostgreSQL. Cada oferta admite uma reserva, e os dois perfis consultam seu status ao recarregar. A reserva é imediata e pode ocorrer antes da janela. Cancelamento, retirada, recebimento com checklist da ONG e encerramento automático também são persistidos. A recuperação de senha segue pendente.
-- Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 006](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
+- ONGs aprovadas podem cadastrar voluntários e associar um deles à reserva ao confirmar o recebimento de uma coleta.
+- Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 007](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
 
 ## Iniciar no Windows (PowerShell)
 
