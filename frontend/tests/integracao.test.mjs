@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cnpjValido, cpfValido, validarDoacao, dataMaisDias } from '../src/utils/formularios.js';
+import { cnpjValido, cpfValido, filtrarOfertas, validarDoacao, dataMaisDias } from '../src/utils/formularios.js';
 import { validarFormularioCadastro, FORM_INICIAL } from '../src/utils/cadastro.js';
 import { montarCadastro, montarPerfil, interpretarErro } from '../src/services/auth.js';
 const base = {
@@ -71,4 +71,18 @@ test('campos da doação possuem validação por etapa', () => {
   assert.ok(validarDoacao({ descricao: '', quantidade: '-2', validade: dataMaisDias(-1) }, 1).descricao);
   assert.ok(validarDoacao({ retiradaData: dataMaisDias(1), retiradaInicio: '12:00', retiradaFim: '11:00' }, 2).retiradaFim);
   assert.ok(validarDoacao({ checklist: { a: false } }, 3).checklist);
+});
+
+test('filtros combinam categoria, quantidade na mesma unidade e validade inclusiva', () => {
+  const oferta = { categoria: 'Frutas', quantidade: '2.500', unidade: 'kg', validade: '2026-11-26', descricao: 'Maçãs', doadorNome: 'Feira' };
+  const ofertas = [
+    oferta,
+    { ...oferta, unidade: 'caixas' },
+    { ...oferta, quantidade: '2.499' },
+    { ...oferta, validade: '2026-11-25' },
+    { ...oferta, categoria: 'Outros' },
+  ];
+  const filtros = { categoria: 'Frutas', quantidade: '2.5', unidade: 'kg', validade: '2026-11-26', busca: ' FEIRA ' };
+  assert.deepEqual(filtrarOfertas(ofertas, filtros), [oferta]);
+  assert.deepEqual(filtrarOfertas(ofertas, { ...filtros, quantidade: '' }), ofertas.slice(0, 3));
 });

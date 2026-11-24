@@ -44,6 +44,10 @@ Esse Compose precisa de uma API acessível pelo navegador. Use outra porta caso 
 
 JWT da aplicação fica no `sessionStorage`; ID token Google não é persistido. Logout local não revoga o JWT no servidor.
 
+## HU08 — Necessidades e busca de ofertas
+
+No menu **Necessidades**, uma ONG aprovada pode cadastrar, editar e desativar seus registros. Necessidades inativas continuam visíveis para a própria ONG. Em **Doações disponíveis**, os filtros podem ser combinados. A quantidade mínima só compara ofertas na unidade escolhida e a validade mínima inclui a data informada.
+
 ## Estrutura
 
 - `src/App.jsx`: navegação e estado de autenticação.

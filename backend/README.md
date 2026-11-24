@@ -17,6 +17,10 @@ Administração: `GET /api/admin/cadastros`, `GET /api/admin/cadastros/{perfil}/
 - `POST /api/doacoes/{id}/cancelamento` — o doador proprietário pode cancelar uma oferta disponível dentro do prazo.
 - `POST /api/doacoes/{id}/retirada` — a ONG que reservou confirma retirada dentro da janela, na modalidade de retirada.
 - `POST /api/doacoes/{id}/recebimento` — a ONG que reservou confirma recebimento com `temperatura`, `embalagem`, `validade` e `conservacao` iguais a `true`. Na entrega pelo doador, o recebimento ocorre dentro da janela. Na retirada, ocorre depois da retirada e antes do vencimento do alimento.
+- `GET /api/necessidades` — lista necessidades ativas e inativas da ONG aprovada autenticada e as categorias ativas.
+- `POST /api/necessidades` — cadastra uma necessidade com `categoria`, `quantidade`, `unidade` e `observacao` opcional.
+- `PUT /api/necessidades/{id}` — atualiza uma necessidade ativa da própria ONG.
+- `POST /api/necessidades/{id}/desativacao` — desativa uma necessidade da própria ONG e preserva seu registro.
 - `GET /health` — liveness.
 - `GET /health/ready` — verifica conexão com o banco.
 - `/docs` — Swagger/OpenAPI.

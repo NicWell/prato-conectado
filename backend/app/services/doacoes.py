@@ -21,8 +21,12 @@ def perfil_operacional(db, usuario, perfil, tipo):
     return cadastro
 
 
+def categorias_ativas(db):
+    return db.scalars(text("SELECT nome FROM categorias_alimento WHERE ativa ORDER BY nome")).all()
+
+
 def catalogo(db):
-    categorias = db.scalars(text("SELECT nome FROM categorias_alimento WHERE ativa ORDER BY nome")).all()
+    categorias = categorias_ativas(db)
     termo = db.execute(text("""
         SELECT id, versao, titulo, conteudo FROM termos_responsabilidade
         WHERE ativo ORDER BY criado_em DESC, id DESC LIMIT 1
