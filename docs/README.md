@@ -6,17 +6,15 @@ Consulte os contratos de [cadastro](cadastro_real.md), [login](integracao_login.
 
 ## Ponto de partida — 24/11/2026
 
-- A `main` remota está no merge do PR #13 (`16c8b12`). Os PRs anteriores entregaram login por senha, cadastro de ONG e doador (empresa ou pessoa física), integração Google, tratamento de sessão e painel administrativo com aprovação, reprovação justificada e notificação interna.
-- O PR #13 integrou publicação de doações e reservas ao React e ao PostgreSQL. Doadores aprovados publicam com termo versionado e checklist. ONGs aprovadas reservam. A reserva é exclusiva e pode ocorrer antes da janela.
-- Na branch `feat/fluxo-doacao-sem-mock`, as mudanças ainda estão na árvore de trabalho local. Foram adicionados cancelamento pelo doador, retirada pela ONG da reserva, recebimento com checklist e encerramento automático. O React usa sempre a API para autenticação, cadastro e doações. O armazenamento simulado e o protótipo antigo de cadastro foram removidos. O seed de contas de teste no PostgreSQL continua opcional e vem desabilitado na configuração de exemplo.
-- A nova implementação passou em 109 testes de backend com PostgreSQL isolado e 23 testes de frontend, além de lint e build. O Compose local subiu saudável e as novas rotas responderam. Das quatro doações previamente registradas, duas foram encerradas por prazo e duas continuaram reservadas na checagem. O percurso completo pela interface ainda precisa de validação manual. O aceite acadêmico depende de validação com a equipe.
+- A `main` remota está em `5a15488` (PR #14), validado pelo usuário. Já inclui autenticação por senha e Google, cadastro de ONG e doador (empresa ou pessoa física), painel administrativo e o fluxo de doação sem mock. Publicação, reserva, cancelamento, retirada, recebimento com checklist e encerramento automático usam o PostgreSQL.
+- A HU08 está implementada e publicada na branch `feat/hu08-necessidades-ong` (`2179a44`), com merge na `main` pendente na data deste registro. ONGs aprovadas cadastram, editam e desativam suas próprias necessidades. Os registros inativos continuam visíveis para a ONG responsável. A busca combina categoria, quantidade mínima na mesma unidade e validade mínima inclusiva. As necessidades usam a tabela existente e os filtros são aplicados no React sobre ofertas retornadas pela API.
+- A HU08 passou em 110 testes de backend com PostgreSQL isolado e 24 testes de frontend, além de lint e build. O Docker local foi reconstruído, as rotas da HU08 estavam disponíveis e o usuário confirmou que o teste manual funcionou. A entrega reaproveita as migrations até 006. O aceite acadêmico formal deve ser registrado pela equipe.
 
 ## Próximas entregas
 
-1. Validar no navegador, com sessões separadas de doador e ONG, publicação, reserva, retirada, checklist e recebimento com status persistido após recarregar. Testar também cancelamento de oferta disponível e entrega pelo doador.
-2. HU08 — cadastrar, editar e desativar necessidades da ONG. Completar filtros de ofertas por categoria, quantidade com unidade compatível e validade.
-3. HU05 — implementar envio privado e revisão de documentos no painel administrativo.
-4. HU03 — cadastrar voluntários com vínculo a uma ONG existente.
+1. Integrar a HU08 à `main` e confirmar o merge antes de iniciar a próxima branch.
+2. HU05 — implementar envio privado e revisão de documentos no painel administrativo existente.
+3. HU03 — cadastrar voluntários com vínculo a uma ONG existente.
 
 A validação com uma conta Google real depende de Client ID e origem autorizada (HU01). A recuperação de senha pela API segue pendente.
 
