@@ -7,28 +7,29 @@ A aplicação não executa `create_all()` em produção. Ordem de aplicação:
 3. `003_cadastro_real.sql`: CNPJ alfanumérico e perfil de doador pessoa física.
 4. `004_google.sql`: desafios Google de uso único, com validade de cinco minutos.
 5. `005_painel_administrativo.sql`: histórico para doador PF e conta administrativa única. Veja [preparação e provisionamento](../docs/painel_administrativo.md).
+6. `006_publicacao_reserva.sql`: amplia a titularidade de doações, aceites e triagens para PF, adiciona a modalidade e carrega categorias e um termo provisório para o piloto.
 
-Resultado: 17 tabelas de domínio, `desafios_google` e `schema_migrations` (19 no total). As migrations 003/004/005 são transacionais, registram suas versões e permitem reexecução. Os scripts anteriores são legados, sem esse controle. Não reaplicar o baseline em banco existente nem editar scripts históricos para atualizar volumes.
+Resultado: 17 tabelas de domínio, `desafios_google` e `schema_migrations` (19 no total). As migrations 003/004/005/006 são transacionais, registram suas versões e permitem reexecução. Os scripts anteriores são legados, sem esse controle. Não reaplicar o baseline em banco existente nem editar scripts históricos para atualizar volumes.
 
 ## Volume novo
 
-O Compose monta os cinco scripts em `/docker-entrypoint-initdb.d`, na ordem correta. Só executam automaticamente se o diretório de dados estiver vazio.
+O Compose monta os seis scripts em `/docker-entrypoint-initdb.d`, na ordem correta. Só executam automaticamente se o diretório de dados estiver vazio.
 
 ## Volume existente
 
-Faça backup e confirme as migrations pendentes. Se já houver 003 aplicada, execute somente 004 antes de iniciar o backend atualizado. Caso contrário, execute 003 e depois 004 (com 002 como pré-requisito). Não removem contas, credenciais ou perfis existentes.
+Faça backup e confirme quais scripts estão pendentes. Aplique somente os pendentes, em ordem até 006, com 002 como pré-requisito. Consulte `schema_migrations` para as versões 003 em diante. Preserve o volume existente.
 
-Exemplo PowerShell para 004 na raiz, serviço `db` em execução (003 já aplicada):
+Exemplo PowerShell na raiz, com serviço `db` em execução e migrations até 005 já aplicadas:
 
 ```powershell
-docker compose exec db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f /tmp/prato-antes-004.dump'
-docker compose cp db:/tmp/prato-antes-004.dump ./prato-antes-004.dump
+docker compose exec db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f /tmp/prato-antes-006.dump'
+docker compose cp db:/tmp/prato-antes-006.dump ./prato-antes-006.dump
 # Guarde o backup em local privado, fora do Git.
-docker compose cp ./database/004_google.sql db:/tmp/004_google.sql
-docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /tmp/004_google.sql'
+docker compose cp ./database/006_publicacao_reserva.sql db:/tmp/006_publicacao_reserva.sql
+docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /tmp/006_publicacao_reserva.sql'
 ```
 
-Se falhar, a transação é revertida. Após sucesso, não há downgrade automático: remover a tabela PF descartaria cadastros. Correções devem usar uma nova migration. Alembic ainda não foi introduzido; o versionamento atual usa SQL numerado, com controle a partir de 003. Não remova volumes para aplicar migrations.
+Se falhar, a transação é revertida. Correções após aplicação devem usar uma nova migration.
 
 ## Integridade
 

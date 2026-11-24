@@ -2,7 +2,7 @@
 
 Monorepositório: `frontend/` (React/Vite), `backend/` (FastAPI), `database/` (PostgreSQL), `docs/` (modelagem).
 
-## Etapa implementada: login e cadastro API
+## Funcionalidades implementadas
 
 - Login de **e-mail/senha** via `POST /api/auth/login`, JWT e consulta `/api/auth/me`.
 - PostgreSQL persiste usuários e hashes Argon2id; script incremental ajusta o modelo de login Google documentado.
@@ -10,8 +10,8 @@ Monorepositório: `frontend/` (React/Vite), `backend/` (FastAPI), `database/` (P
 - Cadastro real em `POST /api/auth/cadastro`: ONG e empresa com CNPJ numérico/alfanumérico; doador pessoa física com CPF. Conta, credencial e perfil são criados em transação, sempre `PENDENTE`.
 - Login Google, vinculação explícita e conclusão de perfil estão implementados no backend e integrados ao React/GIS. Configure `GOOGLE_CLIENT_ID`, repassado ao build como `VITE_GOOGLE_CLIENT_ID`: [contrato Google](docs/integracao_google.md).
 - Painel administrativo integrado à API: conta exclusiva da equipe, consulta de ONGs/doadores, aprovação e reprovação justificada, histórico e notificação interna. Veja [configuração e criação da conta](docs/painel_administrativo.md). Revisão documental ainda pendente.
-- Recuperação de senha real e doações ainda não estão implementadas no backend. Doações e reservas permanecem demonstrativas/locais.
-- Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 005](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
+- Doadores aprovados (empresa ou PF) publicam ofertas e ONGs aprovadas reservam pelo PostgreSQL. Cada oferta admite uma reserva, e os dois perfis consultam seu status ao recarregar. A reserva é imediata e pode ocorrer antes da janela. Retirada, recebimento, encerramento automático e recuperação de senha continuam pendentes.
+- Contrato: [cadastro real](docs/cadastro_real.md). Banco existente: aplicar as [migrations pendentes até 006](database/README.md) antes de iniciar o backend atualizado, sem remover volumes.
 
 ## Iniciar no Windows (PowerShell)
 
@@ -35,7 +35,7 @@ docker compose ps
 1. Abra `http://localhost:8000/docs`.
 2. Execute `POST /api/auth/login` com `{"email":"doador@demo.com","senha":"Teste@123"}` (ou a senha definida no `.env`).
 3. Copie o campo `access_token`, pressione **Authorize** no Swagger, informe o token e chame `GET /api/auth/me`.
-4. Entre no frontend com a mesma conta e confira o redirecionamento para a área demonstrativa.
+4. Entre no frontend com a mesma conta e confira o redirecionamento para a área de doações.
 
 **Importante:** login e cadastro usam a API quando compilados com `VITE_AUTH_MODE=api`; os dois arquivos Compose configuram API por padrão. O Compose separado inicia somente o frontend e exige backend acessível. Para simular sem backend, defina `VITE_AUTH_MODE=mock` antes de reconstruir o Compose separado. Para `npm run dev`, configure `frontend/.env.local` com `VITE_AUTH_MODE=api`, `VITE_API_URL=http://localhost:8000` e, para Google, `VITE_GOOGLE_CLIENT_ID` igual ao backend.
 

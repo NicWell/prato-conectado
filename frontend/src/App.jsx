@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { acessarDemo, autenticar, encerrarSessao, iniciarMock, listarDoacoes, mudarStatusDoacao, novaDoacao, redefinirSenha, registrar, restaurarMock, usuarioAtual } from './mock/store.js';
 import { CompleteProfileScreen, DemoScreen, GoogleLinkScreen, LoginScreen, PendingScreen, RegisterScreen, RejectedScreen, ResetScreen } from './components/AuthScreens.jsx';
 import Workspace from './components/Workspace.jsx';
+import WorkspaceApi from './components/WorkspaceApi.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import { destino, perfilIncompleto } from './utils/sessao.js';
 import { USAR_API_AUTH, cadastrarApi, completarPerfilApi, loginApi, loginGoogleApi, logoutApi, usuarioSessaoApi, validarSessaoApi, vincularGoogleApi } from './services/auth.js';
@@ -21,7 +22,9 @@ export default function App() {
   }, []);
   const atualizarDados = useCallback(() => {
     setUsuario(USAR_API_AUTH ? usuarioSessaoApi() : usuarioAtual());
-    try { setDoacoes(listarDoacoes()); } catch { setDoacoes([]); }
+    if (!USAR_API_AUTH) {
+      try { setDoacoes(listarDoacoes()); } catch { setDoacoes([]); }
+    }
   }, []);
   useEffect(() => {
     let ativo = true;
@@ -41,7 +44,6 @@ export default function App() {
         if (USAR_API_AUTH) {
           await validarSessaoApi();
           if (ativo) { setUsuario(usuarioSessaoApi()); setPronto(true); }
-          iniciarMock().then(() => { if (ativo) atualizarDados(); }).catch(() => {});
         } else {
           await iniciarMock();
           if (ativo) { atualizarDados(); setPronto(true); }
@@ -115,7 +117,9 @@ export default function App() {
   } else if (usuario?.status === 'PENDENTE') {
     tela = <PendingScreen usuario={usuario} apiAtiva={USAR_API_AUTH} theme={tema} toggleTheme={alternarTema} onLogout={sair} onRefresh={consultarSituacao} onLink={() => navegar('/vincular-google')} />;
   } else if (usuario?.status === 'APROVADA') {
-    tela = <Workspace usuario={usuario} tema={tema} alternarTema={alternarTema} rota={rota.startsWith('/app/') ? rota : '/app/inicio'} navegar={navegar} sair={sair} doacoes={doacoes} publicar={publicar} atualizar={atualizar} vincularGoogle={USAR_API_AUTH && !usuario.google_vinculado ? () => navegar('/vincular-google') : null} />;
+    const AreaParticipante = USAR_API_AUTH ? WorkspaceApi : Workspace;
+    const rotaApp = rota.startsWith('/app/') ? rota : '/app/inicio';
+    tela = <AreaParticipante key={USAR_API_AUTH ? `${usuario.id}:${rotaApp}` : usuario.id} usuario={usuario} tema={tema} alternarTema={alternarTema} rota={rotaApp} navegar={navegar} sair={sair} doacoes={doacoes} publicar={publicar} atualizar={atualizar} vincularGoogle={USAR_API_AUTH && !usuario.google_vinculado ? () => navegar('/vincular-google') : null} />;
   } else if (rota === '/cadastro') {
     tela = <RegisterScreen theme={tema} toggleTheme={alternarTema} onSubmit={cadastrar} navigate={navegar} />;
   } else if (rota === '/recuperar-senha') {
@@ -126,7 +130,6 @@ export default function App() {
     tela = <LoginScreen apiAtiva={USAR_API_AUTH} theme={tema} toggleTheme={alternarTema} onLogin={entrar} onGoogleLogin={entrarGoogle} onDemo={entrarDemo} navigate={navegar} onReset={() => navegar('/recuperar-senha')} />;
   }
   return <>
-    {USAR_API_AUTH && usuario?.status === 'APROVADA' && <div className="api-auth-notice" role="note">Autenticação conectada ao backend · Doações e reservas ainda são uma demonstração local.</div>}
     {tela}
     {aviso && <div className="toast" role="status"><span>{aviso}</span><button type="button" onClick={() => setAviso('')} aria-label="Fechar aviso">×</button></div>}
   </>;
