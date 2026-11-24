@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { catalogoDoacoesApi, listarDoacoesApi, publicarDoacaoApi, atualizarDoacaoApi } from '../services/doacoes.js';
+import { desativarNecessidade, listarNecessidades, salvarNecessidade } from '../services/necessidades.js';
 import Workspace from './Workspace.jsx';
 
 export default function WorkspaceApi(props) {
   const { rota, navegar } = props;
   const novaDoacao = rota === '/app/nova-doacao' && props.usuario.tipo === 'DOADOR';
+  const paginaNecessidades = rota === '/app/necessidades' && props.usuario.tipo === 'ONG';
   const [consulta, setConsulta] = useState(0);
   const [resultado, setResultado] = useState(null);
   const [erro, setErro] = useState('');
@@ -13,7 +15,7 @@ export default function WorkspaceApi(props) {
 
   useEffect(() => {
     let ativo = true;
-    const buscar = novaDoacao ? catalogoDoacoesApi : listarDoacoesApi;
+    const buscar = paginaNecessidades ? listarNecessidades : novaDoacao ? catalogoDoacoesApi : listarDoacoesApi;
     buscar().then(resultado => {
       if (ativo) setResultado(resultado);
     }).catch(falha => {
@@ -22,7 +24,7 @@ export default function WorkspaceApi(props) {
       if (ativo) setCarregando(false);
     });
     return () => { ativo = false; };
-  }, [novaDoacao, rota, consulta]);
+  }, [novaDoacao, paginaNecessidades, rota, consulta]);
 
   function recarregar() {
     setCarregando(true);
@@ -46,7 +48,16 @@ export default function WorkspaceApi(props) {
 
   return <Workspace
     {...props}
-    doacoes={!novaDoacao && resultado ? resultado : []}
+    doacoes={Array.isArray(resultado) ? resultado : []}
+    necessidades={paginaNecessidades ? resultado : null}
+    salvarNecessidade={async (id, dados) => {
+      await salvarNecessidade(id, dados);
+      recarregar();
+    }}
+    desativarNecessidade={async id => {
+      await desativarNecessidade(id);
+      recarregar();
+    }}
     catalogo={novaDoacao ? resultado : null}
     publicar={form => publicarDoacaoApi(form, resultado.termo.id)}
     atualizar={atualizar}

@@ -1,6 +1,7 @@
 import { cnpjValido, formatarCnpj } from './validacoes.js';
 
 export { cnpjValido, formatarCnpj };
+export const UNIDADES_ALIMENTO = ['porções', 'kg', 'unidades', 'litros', 'caixas'];
 export const somenteDigitos = (value = '') => String(value).replace(/\D/g, '');
 export const emailValido = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
 export const dataLocal = (date = new Date()) => {
@@ -60,3 +61,13 @@ export const validarDoacao = (v, passo) => {
   if (passo === 3 && !Object.values(v.checklist || {}).every(Boolean)) e.checklist = 'Marque todos os itens, inclusive o aceite do termo.';
   return e;
 };
+
+export function filtrarOfertas(ofertas, { categoria, quantidade, unidade, validade, busca }) {
+  const texto = busca.trim().toLowerCase();
+  return ofertas.filter(oferta =>
+    (!categoria || oferta.categoria === categoria) &&
+    (!quantidade || (oferta.unidade === unidade && Number(oferta.quantidade) >= Number(quantidade))) &&
+    (!validade || oferta.validade >= validade) &&
+    `${oferta.descricao} ${oferta.doadorNome}`.toLowerCase().includes(texto)
+  );
+}

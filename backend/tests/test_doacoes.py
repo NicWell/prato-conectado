@@ -176,3 +176,39 @@ def test_cancelamento_e_expiracao_preservam_historico(client, db):
         SELECT status_anterior, alterado_por_id FROM historico_doacao
         WHERE status_novo = 'ENCERRADA' ORDER BY status_anterior
     """)).all() == [("DISPONIVEL", None), ("RESERVADA", None)]
+
+def test_ong_gerencia_apenas_as_proprias_necessidades(client, db):
+    ong, _ = conta(db, "ong", "ONG")
+    outra, _ = conta(db, "outra", "ONG")
+    doador, _ = conta(db, "doador", "DOADOR")
+    pendente, _ = conta(db, "pendente", "ONG", aprovado=False)
+    rota = "/api/necessidades"
+
+    for auth in (doador, pendente):
+        assert client.get(rota, headers=auth).status_code == 403
+    resposta = client.get(rota, headers=ong)
+    assert resposta.status_code == 200, resposta.text
+    categoria = resposta.json()["categorias"][0]
+    assert resposta.json()["itens"] == []
+    dados = {"categoria": categoria, "quantidade": "2.125", "unidade": "kg", "observacao": "  Urgente  "}
+    for invalido in ({"quantidade": 0}, {"quantidade": "0.0001"}, {"unidade": "saco"}, {"categoria": "Inexistente"}):
+        assert client.post(rota, headers=ong, json={**dados, **invalido}).status_code == 422
+
+    criada = client.post(rota, headers=ong, json=dados)
+    assert criada.status_code == 201, criada.text
+    identificador = criada.json()["id"]
+    item = f"{rota}/{identificador}"
+    assert client.get(rota, headers=outra).json()["itens"] == []
+    assert client.put(item, headers=outra, json=dados).status_code == 404
+    assert client.post(f"{item}/desativacao", headers=outra).status_code == 404
+    atual = client.get(rota, headers=ong).json()["itens"][0]
+    assert atual["quantidade"] == 2.125
+    assert atual["observacao"] == "Urgente"
+
+    alterada = client.put(item, headers=ong, json={**dados, "quantidade": 4, "observacao": ""})
+    assert alterada.status_code == 200, alterada.text
+    for _ in range(2):
+        assert client.post(f"{item}/desativacao", headers=ong).json()["ativa"] is False
+    assert client.put(item, headers=ong, json=dados).status_code == 404
+    atual = client.get(rota, headers=ong).json()["itens"][0]
+    assert (atual["id"], atual["quantidade"], atual["observacao"], atual["ativa"]) == (identificador, 4, None, False)

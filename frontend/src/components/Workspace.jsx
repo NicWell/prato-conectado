@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import NecessidadesOng from './NecessidadesOng.jsx';
 import WorkspaceLayout from './WorkspaceLayout.jsx';
-import { dataLocal, dataMaisDias, formatarData, validarDoacao } from '../utils/formularios.js';
+import { dataLocal, dataMaisDias, filtrarOfertas, formatarData, UNIDADES_ALIMENTO, validarDoacao } from '../utils/formularios.js';
 
-const UNIDADES = ['porções', 'kg', 'unidades', 'litros', 'caixas'];
 const CHECKS = [
   ['temperatura', 'Alimento em temperatura segura'],
   ['embalagem', 'Embalagem fechada e identificada'],
@@ -110,7 +110,7 @@ function DoacaoWizard({ publicar, navigate, catalogo }) {
         <StepField id="categoria" label="Tipo de alimento" erro={erros.categoria}><select id="categoria" value={form.categoria} onChange={e => alterar('categoria', e.target.value)}>{categorias.map(x => <option key={x}>{x}</option>)}</select></StepField>
         <StepField id="descricao" label="Descrição (ex.: arroz e feijão)" erro={erros.descricao}><input id="descricao" placeholder="Arroz e feijão" value={form.descricao} onChange={e => alterar('descricao', e.target.value)} maxLength="120" /></StepField>
         <StepField id="quantidade" label="Quantidade" erro={erros.quantidade}><input id="quantidade" type="number" min="0.01" step="any" value={form.quantidade} onChange={e => alterar('quantidade', e.target.value)} /></StepField>
-        <StepField id="unidade" label="Unidade" erro={erros.unidade}><select id="unidade" value={form.unidade} onChange={e => alterar('unidade', e.target.value)}>{UNIDADES.map(x => <option key={x}>{x}</option>)}</select></StepField>
+        <StepField id="unidade" label="Unidade" erro={erros.unidade}><select id="unidade" value={form.unidade} onChange={e => alterar('unidade', e.target.value)}>{UNIDADES_ALIMENTO.map(x => <option key={x}>{x}</option>)}</select></StepField>
         <StepField id="validade" label="Validade" erro={erros.validade}><input id="validade" type="date" min={dataLocal()} value={form.validade} onChange={e => alterar('validade', e.target.value)} /></StepField>
       </div></>}
       {passo === 2 && <><h2>Retirada ou entrega</h2><div className="form-grid">
@@ -148,14 +148,26 @@ function DashboardOng({ usuario, doacoes, navigate }) {
   </>;
 }
 function Oportunidades({ doacoes, atualizar, processando }) {
-  const [busca, setBusca] = useState(''); const [categoria, setCategoria] = useState('TODAS');
-  const ofertas = doacoes.filter(d => d.status === 'DISPONIVEL')
-    .filter(d => (categoria === 'TODAS' || d.categoria === categoria) && `${d.descricao} ${d.doadorNome}`.toLowerCase().includes(busca.toLowerCase()));
+  const [busca, setBusca] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [unidade, setUnidade] = useState('kg');
+  const [validade, setValidade] = useState('');
+  const disponiveis = doacoes.filter(d => d.status === 'DISPONIVEL');
+  const categorias = [...new Set(disponiveis.map(d => d.categoria))].sort();
+  const ofertas = filtrarOfertas(disponiveis, { categoria, quantidade, unidade, validade, busca });
   return <><Intro subtitle="ONG" name="Doações disponíveis">Encontre alimentos para sua organização</Intro>
-    <div className="toolbar"><input aria-label="Buscar alimentos" placeholder="Buscar alimento ou doador" value={busca} onChange={e => setBusca(e.target.value)} />
-      <select aria-label="Filtrar categoria" className="toolbar-select" value={categoria} onChange={e => setCategoria(e.target.value)}><option value="TODAS">Todas as categorias</option>{[...new Set(doacoes.map(d => d.categoria))].sort().map(x => <option key={x}>{x}</option>)}</select>
+    <div className="form-grid form-grid--three">
+      <label className="field">Buscar alimentos<input placeholder="Alimento ou doador" value={busca} onChange={e => setBusca(e.target.value)} /></label>
+      <label className="field">Categoria<select value={categoria} onChange={e => setCategoria(e.target.value)}><option value="">Todas as categorias</option>{categorias.map(x => <option key={x}>{x}</option>)}</select></label>
+      <label className="field">Validade a partir de<input type="date" value={validade} onChange={e => setValidade(e.target.value)} /></label>
+      <label className="field">Quantidade mínima<input type="number" min="0.001" step="0.001" value={quantidade}
+        onChange={e => setQuantidade(e.target.value === '' || Number(e.target.value) > 0 ? e.target.value : '')} /></label>
+      <label className="field">Unidade<select value={unidade} onChange={e => setUnidade(e.target.value)}>
+        {UNIDADES_ALIMENTO.map(x => <option key={x}>{x}</option>)}
+      </select></label>
     </div>
-    {ofertas.length ? <div className="donations-list">{ofertas.map(d => <CartaoDoacao key={d.id} doacao={d}><button className="btn btn--red btn--small" disabled={processando} onClick={() => atualizar(d.id, 'RESERVAR')}>Reservar</button></CartaoDoacao>)}</div> : <div className="empty-state"><h3>Nenhuma oferta disponível</h3><p>Quando um doador publicar alimentos, as oportunidades aparecerão aqui.</p></div>}
+    {ofertas.length ? <div className="donations-list">{ofertas.map(d => <CartaoDoacao key={d.id} doacao={d}><button className="btn btn--red btn--small" disabled={processando} onClick={() => atualizar(d.id, 'RESERVAR')}>Reservar</button></CartaoDoacao>)}</div> : <div className="empty-state"><h3>Nenhuma oferta encontrada</h3><p>{disponiveis.length ? 'Ajuste os filtros para ver mais ofertas.' : 'As ofertas publicadas aparecerão aqui.'}</p></div>}
   </>;
 }
 function FormularioRecebimento({ id, atualizar, processando }) {
@@ -190,9 +202,9 @@ function ReservasOng({ usuario, doacoes, atualizar, navigate, processando }) {
     </CartaoDoacao>)}</div> : <div className="empty-state"><h3>Você ainda não reservou doações</h3><p>Acesse as oportunidades e escolha uma oferta disponível.</p><button className="btn btn--red" onClick={() => navigate('/app/oportunidades')}>Ver oportunidades</button></div>}
   </>;
 }
-export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, publicar, atualizar, vincularGoogle, catalogo, processando, carregando, erro, recarregar }) {
+export default function Workspace({ usuario, tema, alternarTema, rota, navegar, sair, doacoes, necessidades, salvarNecessidade, desativarNecessidade, publicar, atualizar, vincularGoogle, catalogo, processando, carregando, erro, recarregar }) {
   const ong = usuario.tipo === 'ONG';
-  const links = ong ? [['/app/inicio', 'Início'], ['/app/oportunidades', 'Doações disponíveis'], ['/app/reservas', 'Minhas reservas']] : [['/app/inicio', 'Início'], ['/app/doacoes', 'Minhas doações'], ['/app/nova-doacao', 'Nova doação']];
+  const links = ong ? [['/app/inicio', 'Início'], ['/app/oportunidades', 'Doações disponíveis'], ['/app/reservas', 'Minhas reservas'], ['/app/necessidades', 'Necessidades']] : [['/app/inicio', 'Início'], ['/app/doacoes', 'Minhas doações'], ['/app/nova-doacao', 'Nova doação']];
   return <WorkspaceLayout
     tema={tema} alternarTema={alternarTema} sair={sair}
     perfil={`${ong ? 'ONG' : 'DOADOR'} · ${usuario.nome}`}
@@ -201,8 +213,11 @@ export default function Workspace({ usuario, tema, alternarTema, rota, navegar, 
     acoes={vincularGoogle && <button type="button" className="sidebar-logout" onClick={vincularGoogle}>Vincular Google</button>}
   >
         {erro && <p className="alert alert--error" role="alert">{erro}</p>}
-        {rota !== '/app/nova-doacao' && <button type="button" className="btn btn--outline btn--small" disabled={carregando || processando} onClick={recarregar}>Atualizar ofertas</button>}
-        {carregando ? <p role="status">Carregando doações…</p> : ong ? (
+        {!['/app/nova-doacao', '/app/necessidades'].includes(rota) && <button type="button" className="btn btn--outline btn--small" disabled={carregando || processando} onClick={recarregar}>Atualizar ofertas</button>}
+        {carregando ? <p role="status">Carregando…</p> : ong ? (
+          rota === '/app/necessidades' ? (necessidades
+            ? <NecessidadesOng dados={necessidades} salvar={salvarNecessidade} desativar={desativarNecessidade} />
+            : <button type="button" className="btn btn--outline" onClick={recarregar}>Tentar novamente</button>) :
           rota === '/app/oportunidades' ? <Oportunidades doacoes={doacoes} atualizar={atualizar} processando={processando} /> :
           rota === '/app/reservas' ? <ReservasOng usuario={usuario} doacoes={doacoes} atualizar={atualizar} navigate={navegar} processando={processando} /> :
           <DashboardOng usuario={usuario} doacoes={doacoes} navigate={navegar} />

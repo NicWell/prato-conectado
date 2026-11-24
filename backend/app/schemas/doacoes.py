@@ -6,6 +6,10 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstrai
 from typing_extensions import Annotated
 
 
+UnidadeAlimento = Literal["porções", "kg", "unidades", "litros", "caixas"]
+QuantidadeAlimento = Annotated[Decimal, Field(gt=0, max_digits=12, decimal_places=3)]
+
+
 class ChecklistDoador(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -21,8 +25,8 @@ class PublicacaoDoacao(BaseModel):
 
     categoria: str = Field(min_length=1, max_length=100)
     descricao: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
-    quantidade: Decimal = Field(gt=0, max_digits=12, decimal_places=3)
-    unidade: Literal["porções", "kg", "unidades", "litros", "caixas"]
+    quantidade: QuantidadeAlimento
+    unidade: UnidadeAlimento
     modalidade: Literal["RETIRADA", "ENTREGA"]
     validade_em: AwareDatetime
     inicio_retirada: AwareDatetime
